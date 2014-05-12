@@ -41,6 +41,7 @@ client.on("connect", function (client) {
 
 client.on('error', function (client, err) {
     console.error("client error: " + err);
+    process.exit();
 });
 
 client.Connect();
