@@ -1,0 +1,1098 @@
+/**
+ * license (MIT) Copyright Nubisa Inc. 2014
+ * JXM.io vJXMAPI_VERSION */
+(function(){
+    function jxcore(){}
+    jxcore.encMode='$$encMode$$';
+    jxcore.Unique='0';
+    jxcore.Socket = null;
+    jxcore.OnError = null;
+    jxcore.IsConnected = false;
+    var _ua=navigator.userAgent;
+    jxcore.isMozilla=/Firefox/i.test(_ua);
+    jxcore.ffVersion = 0;
+    jxcore.ieVersion=0;
+    jxcore.isIE = /MSIE/i.test(_ua);
+    jxcore.isAndroid = /Android/i.test(_ua);
+    jxcore.isIOS = /Mobile/i.test(_ua) && /Apple/i.test(_ua);
+    jxcore.isOpera = /Opera/i.test(_ua);
+    jxcore.isSafari = /Safari/i.test(_ua);
+    jxcore.isIE = jxcore.isIE || (!jxcore.isMozilla && !jxcore.isAndroid && !jxcore.isIOS && !jxcore.isOpera && !jxcore.isSafari);
+    if(jxcore.isIE){
+        jxcore.isIE6 = /MSIE 6/i.test(_ua);
+        jxcore.isIE8 = /MSIE 8/i.test(_ua);
+        jxcore.isIE7 = /MSIE 7/i.test(_ua);
+        jxcore.isIE9 = /MSIE 9/i.test(_ua);
+        jxcore.isIE10 = /MSIE 10/i.test(_ua);
+        jxcore.ieVersion = (jxcore.isIE8) ? 8 : (jxcore.isIE7) ? 7 : (jxcore.isIE6) ? 6 : (jxcore.isIE9) ? 9 : 10;
+    }
+    else if(jxcore.isMozilla){
+        /* just takes the first number, e.g. from 4.0.1 it takes 4 */
+        jxcore.ffVersion = _ua.match(/Firefox\/(\d+)/)[1];
+    }
+
+    jxcore.socketEnum = { MozWebSocket : 1, WebSocket : 2 };
+    jxcore.ajaxEnum = { XDomainRequest : 1, XMLHttpRequest: 2, MicrosoftXMLHTTP : 3, Msxml2XMLHTTP :4 };
+    jxcore.currentConnectionMode = { socket: null, ajax: null };
+
+    jxcore.LTimeout = $$listenerTimeout$$;
+    jxcore.ReConnCounter = 0;
+    jxcore.Chunked = (jxcore.ffVersion > 0) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
+    jxcore.MessageCount = 0;
+    jxcore.CMode = jxcore.Chunked?3:4;
+    jxcore.ListenActive = false;
+    jxcore.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: false };
+
+    jxcore.DateTo = function (dt) {
+        var h = dt.getHours();
+        if (parseInt(h) < 10) { h = "0" + h; }
+        var m = dt.getMinutes();
+        if (parseInt(m) < 10) { m = "0" + m; }
+        var s = dt.getSeconds();
+        if (parseInt(s) < 10) { s = "0" + s; }
+        var mm = dt.getMonth()+1;
+
+        if (parseInt(mm) < 10) { mm = "0" + mm; }
+        var dd = dt.getDate();
+        if (parseInt(dd) < 10) { dd = "0" + dd; }
+
+        return dt.getFullYear() + "-" + mm + "-" + dd + "T" + h + ":" + m + ":" + s;
+    };
+
+    jxcore.toJSON = function(obj) {
+        var js = [];
+        var isArray = false, isObject = false;
+        var type = Object.prototype.toString.call(obj);
+        if (obj === null || type === '[object Null]') {
+            return "null";
+        } else
+        if (type === '[object Array]') {
+            isArray = true;
+            js.push("[");
+        }
+        else if (type === '[object Object]') {
+            isObject = true;
+            js.push("{");
+        }
+        else {
+            if (obj.substr) {
+                return '"' + obj.replace(/[\\]/g, '\\\\').replace(/["]/g, '\\"')
+                    .replace(/[+]/g,"&#43;") + '"';
+            }
+            else if (obj.toUTCString) {
+                return '"' + jxcore.DateTo( obj ) + '"';
+            }
+
+            return obj.toString();
+        }
+
+        var isFirst = true;
+        for (var o in obj) {
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                js.push(",");
+            }
+
+            if (!isArray) {
+                js.push('"' + o + '":' + jxcore.toJSON(obj[o]));
+            }
+            else
+            {
+                js.push(jxcore.toJSON(obj[o]));
+            }
+        }
+
+        return js.join("") + ( (isArray) ? "]" : (isObject) ? "}" : "");
+    };
+
+    jxcore.Callbacks = [];
+    jxcore.Call = function(methodName, json, cb){
+        var str = '{"m":"'+methodName+'"';
+
+        if(json){
+            str += ',"p":' + jxcore.toJSON(json);
+        }
+
+        if(cb){
+            jxcore.Callbacks.push(cb);
+            str += ',"i":' + (jxcore.Callbacks.length).toString();
+        }
+
+        str += "}";
+
+        jxcore.Send(escape(str));
+    };
+
+    jxcore.enc = null;
+    var subreq = false;  /* subscription request */
+    jxcore.Subscribe = function(group, cb){
+        if(group && group.length){
+            subreq = "subscription";
+            jxcore.Call("nb.ssTo", {gr:group, en:jxcore.enc}, function(r){
+               jxcore.enc = r.key;
+               if (r.did !== null) {
+                    jxcore.dataId = r.did;
+               }
+               subreq = false;
+               if(cb){cb(group);}
+            });
+        }
+        else{
+            throw "Group name must be a non empty string";
+        }
+    };
+
+    jxcore.Unsubscribe = function(group, cb){
+        if (!jxcore.enc) {
+            return;
+        }
+        if(group && group.length){
+            subreq = "unsubscription";
+            jxcore.Call("nb.unTo", {gr:group, en:jxcore.enc}, function(r){
+                subreq = false;
+                jxcore.enc = r;
+                if(cb){cb(group);}
+            });
+        }
+        else{
+            throw "Group name must be a non empty string";
+        }
+    };
+
+    jxcore.SendToGroup = function(groupName, methodName, json){
+        if(!groupName){
+            groupName="ALL";
+        }
+        jxcore.Call("nb.stGr", {key:jxcore.enc, gr:groupName, m:methodName, j:json});
+    };
+
+    jxcore.Custom = {};
+
+    jxcore.dataId = null;
+
+    jxcore.ActualCallbackId = 0;
+    window.$NB = function(a)
+    {
+        if(!a){
+            return;
+        }
+        if (Object.prototype.toString.call(a) != '[object Array]') {
+            a = [a];
+        }
+
+        for(var o in a){
+            if(!o){
+                continue;
+            }
+
+            var p = a[o].o;
+            if(!p){
+                continue;
+            }
+
+            if(a[o].i){
+                jxcore.dataId = a[o].i;
+            }
+
+            if(p.m){
+                /* not every client MUST have remote method */
+                if (window[p.m]) {
+                    window[p.m](p.p);
+                }
+            }else if (p.i && p.i < 0) {
+                jxcore.sscall(p.i, p.p);
+            }
+            else if(p.i){
+                jxcore.ActualCallbackId = p.i;
+                if(jxcore.backup && p.i>jxcore.Callbacks.length){
+                    jxcore.backup[p.i-1](p.p);
+                    jxcore.backup[p.i-1] = null;
+                }else{
+                    /* on IE6 sometimes happened, that there was no callback ? */
+                    if (jxcore.Callbacks[p.i-1]) {
+                        jxcore.Callbacks[p.i-1](p.p);
+                        jxcore.Callbacks[p.i-1] = null;
+                    }
+                }
+                if(p.i>9998){
+                    jxcore.backup = jxcore.Callbacks;
+                    jxcore.Callbacks = [];
+                }
+            }
+        }
+    };
+
+    jxcore.IsListenActive = function () {
+        return jxcore.ListenActive;
+    }; 
+
+    jxcore.eco = function(_i) {
+        var xo = []; 
+        var q = 0, ln = _i.length; 
+        do {
+            var _c1 = _i.charCodeAt(q++); 
+            var _e1 = _c1 >> 2;
+	        xo.push(jxcore._es_.charAt(_e1));
+		
+	        var _c2 = _i.charCodeAt(q++); 
+            var _e2 = ((_c1 & 3) << 4) | (_c2 >> 4);
+	        xo.push(jxcore._es_.charAt(_e2));
+		
+	        var _c3 = _i.charCodeAt(q++);
+            var _e3 = ((_c2 & 15) << 2) | (_c3 >> 6);
+		
+            var _e4; 
+            if (isNaN(_c2)) {
+		        _e3 = 64; _e4 = 64;
+            } else if (isNaN(_c3)) {
+		        _e4 = 64;
+            }else{
+		        _e4 = _c3 & 63;
+	        }
+
+	        xo.push(jxcore._es_.charAt(_e3));
+	        xo.push(jxcore._es_.charAt(_e4));
+		
+        }while (q < ln);
+
+        return xo.join("");
+    };
+
+    jxcore.dco = function(_i) {
+        var xo = [];   
+        if (jxcore._rt.exec(_i)) {
+            return _i;
+        }
+
+        _i = _i.replace(jxcore._rt, "");
+        var q = 0, ln=_i.length;
+        do {
+            var _e1 = jxcore._es_.indexOf(_i.charAt(q++));
+            var _e2 = jxcore._es_.indexOf(_i.charAt(q++));
+            var _cb = (_e1 << 2) | (_e2 >> 4);
+            xo.push(String.fromCharCode(_cb));
+		
+	        var _e3 = jxcore._es_.indexOf(_i.charAt(q++));
+            if (_e3 != 64) {
+		        var _ca = ((_e2 & 15) << 4) | (_e3 >> 2);
+                xo.push(String.fromCharCode(_ca));
+            }
+		
+	        var _e4 = jxcore._es_.indexOf(_i.charAt(q++));
+            if (_e4 != 64) {
+		        var _cc = ((_e3 & 3) << 6) | _e4;
+		        xo.push(String.fromCharCode(_cc));
+            }
+
+        }while (q < ln);
+
+        return xo.join("");
+    };
+    jxcore._es_="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv";
+    jxcore._rt = /[^A-Za-z0-9\+\/\=]/g;
+    jxcore._es_+="wxyz0123456789+/=";
+
+    jxcore.AddEvent = function (_e, _n, _h) {
+        if (window.attachEvent && !window.addEventListener) {
+            _e.attachEvent("on" + _n, _h);
+        }
+        else {
+            _e.addEventListener(_n, _h, false);
+        }
+    };
+
+    jxcore.RemoveEvent = function (_e, _n, _h) {
+        if (window.detachEvent && !window.removeEventListener) {
+            _e.detachEvent("on" + _n, _h);
+        }
+        else {
+            _e.removeEventListener(_n, _h, false);
+        }
+    };
+
+    jxcore.GetClientId = function () {
+        return jxcore.clid;
+    };
+
+    window._pci_ = jxcore.GetClientId;
+
+    jxcore.FCon = 0;
+    
+    jxcore.Listen = function (cc) {
+        if (!jxcore.IsConnected || (!cc && jxcore.ListenActive)) {
+            return false;
+        }
+
+        jxcore.Act("Li1 - cc:"+cc, true);
+        jxcore._Send(-1, cc);
+
+        return true;
+    };
+
+    jxcore.Send = function (mess) {
+        if (!jxcore.IsConnected) {
+            return;
+        }
+
+        var _id = jxcore.RequestList.sn++;
+        jxcore.RequestList.s[_id] = { message: mess, is_send: true };
+        return _id;
+    };
+
+    jxcore.SendCheckerActive =function() {
+        setTimeout(function() {
+            try {
+                if(jxcore){
+                    jxcore.SendChecker();
+                }
+            }catch(e) {
+            }
+        },10);
+    };
+
+    jxcore.getDate = function(){
+        if(Date.now){
+            return Date.now();
+        }
+        else
+        {
+            return new Date().valueOf();
+        }
+    };
+
+    jxcore.failCount = 0;
+
+    jxcore.SendChecker = function () {
+        try {
+            if (jxcore.ListenActive) {
+                jxcore.timer = jxcore.getDate();
+            }
+
+            if (jxcore.ListenActive) {
+                if (jxcore.RequestList.sn > jxcore.RequestList.sc) {
+                    var _pool = jxcore.RequestList.sc;
+                    if (jxcore.RequestList.s[_pool] != null) {
+                        jxcore._Send(_pool);
+                    }
+                    jxcore.RequestList.sc++;
+                }
+            }
+
+            if(jxcore.failCount>2){
+                jxcore.Closed();
+                return;
+            }
+
+            if (!jxcore.ListenActive && jxcore.IsConnected) {
+                if (jxcore.getDate() - jxcore.timer > 3000) {
+                    jxcore.timer = jxcore.getDate();
+                    jxcore.Listen(14);
+                    jxcore.failCount++;
+                }
+            }
+        }catch(eo) {
+            jxcore.Notify(eo, "SendChecker");
+        }
+        jxcore.SendCheckerActive();
+    };
+
+    jxcore.fin = false;
+    jxcore.Close = function (silent) {
+        jxcore.Closed(1, silent);
+    };
+
+    jxcore.Closed = function (ir, silent) {
+        if (ir == null) {
+            setTimeout(function(){jxcore.ReConnect();},0);
+            if(jxcore.OnClose){
+                jxcore.OnClose(true);
+            }
+            return;
+        }
+
+        if(jxcore.OnClose && !silent){
+            jxcore.OnClose(false);
+        }
+
+        jxcore.OnError = null;
+        document.jxcoreWasConnected = jxcore.IsConnected;
+        document.ListenActive = false;
+        jxcore.IsConnected = false;
+        jxcore.Started = false;
+        try {
+            jxcore.RequestList.l.connector.abort();
+        } catch (e) { }
+    };
+
+    document.jxcoreWasConnected = false;
+    jxcore.Started = false;
+
+    jxcore.Start = function (_callback_) {
+        window.p_callback_ = _callback_;
+        setTimeout(function () {
+            if(!jxcore){return;}
+
+            if (jxcore.Started) {
+                return;
+            }
+
+            jxcore.Started = true;
+            jxcore.RequestList.l = { message: "", is_send: false, connector: null };
+
+            jxcore.OnConnected();
+            jxcore.timer = jxcore.getDate();
+            jxcore.Listen();
+        }, 50);
+    };
+
+    jxcore.OnConnected = function () {
+        jxcore.ReConnCounter = 0;
+        jxcore.IsConnected = true;
+        if (window.p_callback_ != null) {
+            window.p_callback_(true);
+        }
+
+        jxcore.SendCheckerActive();
+    };
+
+    jxcore.HMess = function(mess) {
+        if (mess != null && mess!="") { 
+            mess = mess.replace("jxcore.Listen();", "");
+            if (jxcore.OnMessageReceived != null) {
+                jxcore.OnMessageReceived(mess);
+                mess += ";if(jxcore.OnMessageExecuted!=null){jxcore.OnMessageExecuted();};";
+            }
+
+            try {
+                eval(mess);
+            }catch(ee) {
+                jxcore.Notify(ee, mess);
+            }
+        }
+    };
+
+    jxcore.SocketOpen = false;
+    jxcore.SFirst = [];
+    jxcore.SocketDisabled = false;
+    jxcore.SocketURL= null;
+
+    jxcore.GoSockets = function(call_id) {
+        if(jxcore.SocketDisabled) {
+            return false;
+        }
+
+        if(jxcore.SocketURL==null || jxcore.isAndroid || (jxcore.isIE && jxcore.ieVersion<9)) {
+            jxcore.SocketDisabled = true;
+            return false;
+        }
+
+        if(jxcore.Socket==null) {
+            var uri=jxcore.SocketURL + jxcore.ListenUrl+"?c="+jxcore.clid;
+
+            try{
+                if (window.MozWebSocket) {
+                    jxcore.Socket = new MozWebSocket(uri);
+                    jxcore.currentConnectionMode.socket = "MozWebSocket";
+                } else if (window.WebSocket) {
+                    jxcore.Socket = new WebSocket(uri);
+                    jxcore.currentConnectionMode.socket = "WebSocket";
+                } else {
+                    jxcore.SocketDisabled = true;
+                    return false; 
+                }
+            }catch(_f){
+                jxcore.Act("21", false);
+                jxcore.SocketDisabled = true;
+                return false;
+            }
+
+            jxcore.Socket.onopen = function(ev) {
+                jxcore.SocketOpen = true;
+                if(jxcore.SFirst.length>0) {
+                    for (var o in jxcore.SFirst) {
+                        jxcore.Socket.send(jxcore.SFirst[o]);
+                    }
+                    jxcore.SFirst = [];
+                }
+            };
+
+            jxcore.Socket.onclose = function(ev) {
+                if(!jxcore.SocketOpen) {
+                    jxcore.SocketDisabled = true;
+                    jxcore.Act("15", false);
+                    jxcore.Listen();
+                    return;
+                }
+                jxcore.SocketOpen = false;
+                jxcore.Socket = null;
+                setTimeout(function(){if(jxcore){jxcore.Closed();}},5);
+            };
+
+            jxcore.Socket.onerror = function(ev) {
+                jxcore.Socket = null;
+                jxcore.SocketDisabled = true;
+                jxcore.Act("15", false);
+
+                jxcore.Notify("Socket error. Falling back to reverse ajax.","");
+
+                setTimeout(function() {
+                    jxcore.Listen(1);
+                    if (jxcore.SFirst.length > 0) {
+                        for (var o in jxcore.SFirst) {
+                            if (jxcore.SFirst[o] == null) {
+                                continue;
+                            }
+                            jxcore.Send(jxcore.SFirst[o], false, true);
+                        }
+                        jxcore.SFirst = [];
+                    }
+                }, 800);
+            };
+            jxcore.Socket.onmessage = function(ev) {
+                try {
+                    var data = unescape(ev.data);
+                    jxcore.HMess(data);
+                }catch(ee)
+                {
+                   jxcore.Notify(ee, unescape(ev.data));
+                }
+            }; 
+        }
+
+        if(call_id==-1) {
+            jxcore.Act("16", true);
+            return true;
+        }
+        
+        if(jxcore.SocketOpen) {
+            jxcore.Socket.send(jxcore.RequestList.s[call_id].message);
+        }else {
+            jxcore.SFirst.push(jxcore.RequestList.s[call_id].message);
+        }
+
+        return true;
+    };
+
+    jxcore.actPos = 0;
+    jxcore.pasPos = 0;
+    jxcore.Act = function(pos, act){
+        if(act){
+        jxcore.actPos = pos;
+           }else {
+            jxcore.pasPos = pos;
+        }
+        jxcore.ListenActive = act;
+    };
+
+    jxcore.CORS = jxcore.ieVersion<10 && jxcore.isIE;
+
+    jxcore.IEHTTPMode = false;
+    jxcore.CreateAjax = function () {
+        var xmlHttp = null;
+        try {
+            if(jxcore.CORS) {
+                try 
+                {
+                    xmlHttp = new XDomainRequest();
+                    jxcore.currentConnectionMode.ajax = "XDomainRequest";
+                    return xmlHttp;
+                }catch(e) {
+                }
+            }
+            if(jxcore.ieVersion==6) {
+                throw null;
+            }else {
+                xmlHttp = new XMLHttpRequest();
+                jxcore.currentConnectionMode.ajax = "XMLHttpRequest";
+            }
+        }
+        catch (e) {
+            if(jxcore.isIE) {
+                try {
+                        xmlHttp = new ActiveXObject('Microsoft.XMLHTTP');
+                        jxcore.currentConnectionMode.ajax = "Microsoft.XMLHTTP";
+                        jxcore.IEHTTPMode = true;
+                        if(xmlHttp) {return xmlHttp;}
+                    }catch(e) {
+                        try {
+                            xmlHttp = new ActiveXObject('Msxml2.XMLHTTP');
+                            jxcore.currentConnectionMode.ajax = "Msxml2.XMLHTTP";
+                            jxcore.IEHTTPMode = true;
+                            if(xmlHttp) {return xmlHttp;}
+                        }catch(e) {
+                        }
+                    }
+            }
+
+            if(!xmlHttp) {
+                if (jxcore.OnError != null) {
+                    jxcore.OnError("Connection Problem : No Ajax Support");
+                }
+            }
+        }
+
+        return xmlHttp;
+    };
+
+    jxcore.arrToString = function(arr){
+        var str = "";
+        var first = true;
+
+        var orders = 0;
+
+        for(var o in arr){
+            if(!arr[o]){
+                continue;
+            }
+
+            if(first)
+                first = false;
+            else
+            {
+                str += "|";
+            }
+            var x = 1 + parseInt(o);
+            str += x;
+            orders ++;
+
+            if(orders>256){
+                break;
+            }
+        }
+
+        if (!str) {
+            str = "|";
+        }
+        return str;
+    };
+
+    jxcore.ListenCounter = jxcore.getDate();
+    jxcore._Send = function (call_id, cc) {
+        if (!jxcore.IsConnected) {
+            return;
+        }
+
+        if(call_id==-1){
+            jxcore.MessageCount = 0;
+        }
+        
+        if(!jxcore.SocketDisabled){
+            if (jxcore.GoSockets(call_id, cc)) {
+                return;
+            }
+        }
+
+        var txt = [];
+        txt.push('c=' + window._pci_());
+        
+        var _url = jxcore.ListenUrl;
+        var xmlHttp;
+        if (call_id != -1) {
+            try {
+                if( jxcore.RequestList.s[call_id]!=null) {
+                    txt.push('ms=' + jxcore.RequestList.s[call_id].message);
+                }
+            } catch (e) {
+                return;
+            }
+            xmlHttp = jxcore.CreateAjax(true, call_id);
+        }
+        else
+        {
+            if(jxcore.dataId){
+                txt.push('did=' + jxcore.dataId);
+            }
+
+            txt.push('pi=' + jxcore.arrToString(jxcore.Callbacks));
+
+            if(jxcore.enc){
+                txt.push('en=' + jxcore.enc);
+            }
+
+            if (jxcore.RequestList.l.connector == null) {
+                xmlHttp = jxcore.CreateAjax(true, call_id);
+                jxcore.RequestList.l.connector = xmlHttp;
+            }
+            else
+            {
+                xmlHttp = jxcore.RequestList.l.connector;
+                try {
+                    jxcore.RequestList.l.connector.abort();
+                } catch (e) { }
+            }
+        }
+
+        txt = txt.join('&');
+        var ico = jxcore.ListenCounter++;
+        var uext = 'co=' + ico + "&io=" + jxcore.ieVersion;
+        if (_url.indexOf('?') > 0) {
+            uext = '&' + uext;
+        } else {
+            uext = '?' + uext;
+        }
+
+        try {
+            xmlHttp.open("POST", _url + uext, true);
+            if (typeof xmlHttp.setRequestHeader != 'undefined') {
+                xmlHttp.setRequestHeader("Cache-Control", "no-cache");
+                xmlHttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+            }
+
+            if(call_id == -1){
+                if(jxcore.Timo){
+                    clearTimeout(jxcore.Timo);
+                }
+                jxcore.Timo = setTimeout(function(){
+                    jxcore.Listen(5);
+                }, jxcore.LTimeout);
+            }
+        }
+        catch(e)
+        {
+            if(jxcore.OnError) {
+                jxcore.OnError(e);
+            }
+            else {
+                throw e;
+            }
+            return;
+        }
+
+        try{
+            xmlHttp.call_id = call_id;
+        }catch(e){}
+
+        try {
+            xmlHttp.onerror = function () {
+                var cid = call_id;
+                try {
+                    cid = this.call_id;
+                }catch(e)
+                {
+                }
+                if (cid == -1) {
+                    jxcore.Act("2", false);
+                }
+            }
+        } catch (eee) {}
+
+        xmlHttp.onreadystatechange = function () {
+            var _this = this;
+
+            if(jxcore.ieVersion==6) {
+                _this = xmlHttp;
+            }
+
+            var oStatus = "";
+            try {
+                oStatus = _this.status;
+            }
+            catch (e) { }
+
+            var cloid = call_id;
+
+            try{
+            if(_this.call_id){
+                cloid = _this.call_id;
+            }
+            }catch(e){}
+
+            var rs = _this.readyState;
+
+            if (cloid == -1 && !rs && _this.responseText != "" && (jxcore.isIE7 || jxcore.isIE8 || jxcore.isIE9)) {
+                rs = jxcore.CMode;
+                oStatus = 200;
+            }
+
+            if(cloid == -1){
+                jxcore.Act("1a", true);
+            }
+
+            if (rs == jxcore.CMode && (oStatus == 200 || oStatus == 304)) {
+                var mess="";
+
+                try {
+                    var hl = false; 
+                    if (_this.responseText != "") {
+
+                        var smes = unescape(_this.responseText);
+
+                        if(jxcore.Chunked){
+                            mess = jxcore.ParseBase(smes);
+                            if(mess==""){
+                                jxcore.Act("5", true);
+                                return;
+                            }
+                        }
+                        else {
+                            mess = smes.replace(/[@]/g,"").replace(/[?]/g,"");
+                        }
+                        
+                        if (mess != null && mess!="") { 
+                            var _mess = mess.replace("jxcore.Listen();", "");
+                            hl = _mess.length != mess.length;
+                            
+                            if (jxcore.OnMessageReceived != null) {
+                                jxcore.OnMessageReceived(_mess);
+                                _mess += ";if(jxcore.OnMessageExecuted!=null){jxcore.OnMessageExecuted();};";
+                            }
+
+                            try {
+                               if(_mess.length>0){
+                                   if(_mess != "<br/>"){
+                                        eval(_mess);
+                                   }
+                                }
+                            }catch(ee) {
+                                jxcore.Notify(ee, mess);
+                            }
+
+                            
+                            if(jxcore.Chunked){
+                                if (!hl) {
+                                    jxcore.Act("5", true);
+                                }else{
+                                    jxcore.Act("6", false);
+                                    setTimeout(function () { if(jxcore){jxcore.Act("6", false);jxcore.ReCall(14);}; }, 1);
+                                }
+                                return;
+                            }
+                        }
+
+                        if (hl) {
+                            setTimeout(function () { if(jxcore){jxcore.Act("74", false);jxcore.ReCall();}}, 10);
+                            return;
+                        }
+                    }
+                }
+                catch (e) { 
+                    jxcore.Act("9", false);
+                    jxcore.Notify(e, "ORS-" + mess);
+                }
+            }
+            else if(rs == 4)
+            {
+                var hl = false;
+                var smes="";
+                if (_this.responseText != "") {
+                    smes = unescape(_this.responseText);
+                    var _mess = smes.replace("jxcore.Listen();", "");
+                    hl = _mess.length != smes.length;
+                }
+
+                if(cloid==-1 && !hl){
+                    jxcore.Act("139", false);
+                }
+
+                try {
+                    if(smes == "@<br/>?" && cloid == -1) {
+                        setTimeout(function () {if(jxcore){ jxcore.Closed();}},750);
+                    }
+                }catch(e) {}
+            }
+        };
+
+        if(jxcore.CORS && !jxcore.isIE6) {
+            xmlHttp.onload = xmlHttp.onreadystatechange;
+            xmlHttp.onprogress = xmlHttp.onreadystatechange;
+        }
+
+        xmlHttp.send(txt);
+    };
+
+    jxcore.ParseBase = function(smes) {
+        var arr = smes.split('@');
+        var asub = [];
+        var i=0;
+        for(var o in arr){
+            if(arr[o]!="" && arr[o]!=null){
+                if(arr[o].charAt){
+                    asub[i++] = arr[o];
+                }
+            }
+        }
+
+        var mes = "";
+        arr = asub;
+
+        for(;jxcore.MessageCount<arr.length;jxcore.MessageCount++){
+            var str = arr[jxcore.MessageCount];
+            if(str.charAt(str.length-1)!="?") {
+                break;
+            }
+
+            str = str.substring(0, str.length-1);
+            if(str == "<br/>"){
+                continue;
+            }
+
+            mes += str;
+        }
+
+        mes = mes.replace(new RegExp("&#64;","g"),"@")
+            .replace(new RegExp("&#63;","g"),"?")
+            .replace(new RegExp("&#43;","g"),"+");
+
+        return mes; 
+    };
+
+    jxcore.Notify = function(e,mess) {
+        if (jxcore.OnError != null) {
+            var rt = "No Response";
+
+            if(mess!=null) {
+                rt = mess;
+            }
+
+            jxcore.OnError('Error - : ' + e + ' --- ' + rt, true);
+        }
+    };
+
+    jxcore.ReCallCo = 0;
+    jxcore.ReCall = function (q) {
+        if (!jxcore.Listen(q)) {
+            setTimeout(function () { if(jxcore){jxcore.Act("67", false);jxcore.ReCall(q);}}, 200);
+        } else {
+            if (jxcore.ReCallCo > 0) {
+                jxcore.ReCallCo--;
+            }
+        }
+    };
+
+    jxcore.ReConnect = function (turl) {
+        if(document.jxcorercnn == 2) {
+            return;
+        }
+
+        document.jxcorercnn = 2;
+
+        var rec = document.jxcoreWasConnected;
+        if (jxcore.IsConnected) {
+            jxcore.Close(5);
+        }
+
+        jxcore.ReConnCounter++;
+        if(jxcore.ReConnCounter>5){
+            document.jxcorercnn = 1;
+            if(jxcore.OnClose){
+                jxcore.ReConnCounter = 0;
+                jxcore.OnClose(false);
+            }
+            return;
+        }
+        setTimeout(function () { 
+            try {
+                if(jxcore){
+                    if(jxcore.Inter!=0) {
+                        clearInterval(jxcore.Inter);
+                    }
+                }
+            } catch (e) { }
+            document.jxcoreWasConnected = rec;
+            var scr = document.createElement("script");
+            scr.type = "text/javascript";
+            if(!turl) {
+                var elm = document.getElementsByTagName("script");
+                var oe = null;
+                for (var o in elm) {
+                    oe = elm[o];
+                    if (oe == null) {
+                        continue;
+                    }
+                    try {
+                        if (oe.src.indexOf("ms=connect") > 0) {
+                            break;
+                        }
+                    } catch(e) {
+                    }
+                }
+                if (oe == null) {
+                    document.jxcorercnn = 1;
+                    throw "ReConnection error: Make sure that one of the script elements contain jxcore connection parameter 'ms=connect'";
+                }
+                scr.src = oe.src + "&rc="+jxcore.getDate();
+            }
+            else {
+                scr.src = turl + "&rc="+jxcore.getDate();
+            }
+
+            var bdy = document.getElementsByTagName("body");
+            if (bdy.length == 0) {
+                document.jxcorercnn = 1;
+                throw ("document body must be defined to use jxcore.ReConnect!");
+            }
+            setTimeout(function() {     
+                    try {
+                        document.jxcorercnn = 1;
+                        if (!window.jxcore.IsConnected) {
+                            window.jxcore.ReConnect();
+                        }
+                    }catch(ee) {
+                    }
+            },3000);
+            
+            jxcore.SendChecker = null;
+            bdy[0].appendChild(scr);
+            jxcore.ListenCounter++;
+        }, 1000);
+    };
+
+    jxcore.Inter = setInterval(function () {
+        if (document.onjxready != null) {
+            clearInterval(jxcore.Inter);
+            jxcore.Inter = 0;
+            setTimeout(function () {
+                document.onjxready();
+            }, 1);
+        }
+        if (jxcore.Started) {
+            clearInterval(jxcore.Inter);
+            jxcore.Inter = 0;
+        }
+    }, 250);
+
+    window.jxcore = jxcore;
+
+    jxcore.sscall = function(id, param) {
+        if (id==-1) {
+            if (param.key) {
+               jxcore.enc = param.key;
+            }
+            if (param.did) {
+               jxcore.dataId = param.did;
+            }
+
+            if (jxcore.OnSubscription) {
+                jxcore.OnSubscription(param.su, param.gr);
+           }
+        }
+    };
+
+    document.P_pageShown = 0;
+    try{
+        jxcore.AddEvent(window, "pageshow", function () {
+            if(document.P_pageShown==0) {
+                document.P_pageShown++;
+                return;
+            }
+
+            jxcore.fin=false;
+            document.jxcorercnn = 0;
+            
+            if(jxcore.OnClose!=null){
+                jxcore.OnClose();
+            }
+        });
+
+        if (jxcore.isIE && (jxcore.isIE6 || jxcore.isIE7)) {
+
+            jxcore.AddEvent(window, "unload", function () {
+                if (jxcore && jxcore.Close) {
+                    jxcore.Close();
+                }
+            });
+        }
+
+    }catch (ee){}
+})(window);

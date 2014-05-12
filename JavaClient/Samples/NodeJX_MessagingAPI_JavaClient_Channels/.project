@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>NodeJX_MessagingAPI_JavaClient_Channels</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>jxcore_messaging.jar</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/out/artifacts/jxcore_jar/jxcore_messaging.jar</locationURI>
+		</link>
+	</linkedResources>
+</projectDescription>
