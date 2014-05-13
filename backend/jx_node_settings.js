@@ -46,7 +46,7 @@ exports.listenerTimeout = 60000; //long polling request time (ms) NOTE: max 120 
 exports.IPAddress = "0.0.0.0";
 
 exports.chunked = false;
-exports.mapiVersion = "0.2.6";
+exports.mapiVersion = "0.2.7";
 
 //enable disable console logging
 exports.console = true;

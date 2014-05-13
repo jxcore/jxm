@@ -1,7 +1,7 @@
 {
     "name": "jxm",
     "description": "Incredibly fast messaging backend",
-    "version": "0.2.6",
+    "version": "0.2.7",
     "author": {
         "name": "Nubisa Inc."
     },
@@ -17,7 +17,7 @@
         "amqp": "~0.1.8",
         "mediaserver": "~0.0.3"
     },
-    "readme": "README.md",
+    "readmeFilename": "README.md",
     "homepage": "http://jxm.io",
     "license": "MIT"
 }
