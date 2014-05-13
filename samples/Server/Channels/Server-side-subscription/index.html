@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>JXcore Messaging API Channels example.</title>
+    <!-- This is useful, if you want to test the backend on mobile devices -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1;maximum-scale=1.0; user-scalable=0;"/>
+
+    <script src="/channels/jx?ms=connect" type="text/javascript"></script>
+</head>
+<body style="font-family: Tahoma, Geneva, sans-serif; font-size: 9;">
+<input type="button" id="btnSend" value="Start" disabled="disabled"/>
+<BR/>
+
+<div id="msg"/>
+
+<script type="text/javascript">
+
+    document.onjxready = function () {
+
+        jxcore.Start(function (status) {
+            var btnSend = document.getElementById('btnSend');
+            btnSend.disabled = "";
+
+            var msg = document.getElementById("msg");
+            msg.innerHTML += "Connected.<BR>";
+
+            // let's define client's custom method
+            // and register it for global usage
+            window["clientsMethod"] = function (s) {
+                msg.innerHTML += s + "<BR>";
+            };
+
+            document.getElementById('btnSend').onclick = function () {
+                // when server receives this call,
+                // it will subscribe a client to a "testGroup"
+                jxcore.Call("someMethod", true);
+            };
+        });
+
+        jxcore.OnClose = function (reconnecting) {
+            msg.innerHTML += "Disconnected.<BR>";
+        };
+
+        jxcore.OnError = function (err) {
+            msg.innerHTML += err;
+        };
+
+        jxcore.OnSubscription = function (subscribed, group) {
+            if (subscribed) {
+                // let's send a message to other clients.
+                // in fact, we will invoke their local method "clientsMethod"
+                // and pass the message as an argument.
+                jxcore.SendToGroup(group, "clientsMethod", "Hello from browser");
+            }
+        };
+    };
+</script>
+</body>
+</html>

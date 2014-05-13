@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JXcore Messaging Chat Sample.</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1;maximum-scale=1.0; user-scalable=0;"/>
+
+    <script src="/chat/jx?ms=connect" type="text/javascript"></script>
+
+    <link rel="stylesheet" href="/chat/assets/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/chat/assets/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="/chat/assets/css/ace-fonts.css"/>
+    <link rel="stylesheet" href="/chat/assets/css/ace.min.css"/>
+</head>
+<body>
+<div id="dialog_item_template" style="display: none;">
+    <div class="itemdiv dialogdiv" id="#id#">
+        <div class="user">
+            <img alt="Avatar" src="/chat/assets/avatars/avatar1.png">
+        </div>
+
+        <div class="body">
+            <div class="time">
+                <i class="icon-time"></i>
+                <span class="green">#time#</span>
+            </div>
+
+            <div class="name">
+                <a href="#">#name#</a>
+            </div>
+            <div class="text">#message#</div>
+        </div>
+    </div>
+</div>
+<div style="width:90%;min-width: 250px; margin:0 auto;padding:30px;">
+    <div class="widget-box">
+        <div class="widget-header">
+            <img src="/chat/assets/nubisa_logo.png" align="right" style="margin: 6px;"/>
+            <h4 class="lighter smaller" style="margin-top: 50px">
+                <i class="icon-comment blue"></i>
+                JXM.io Chat Sample
+            </h4>
+        </div>
+        <div class="widget-body">
+            <div class="widget-main no-padding">
+                <div style="position: relative; overflow: hidden; width: auto; height: 300px;">
+                    <div style="overflow: scroll; width: auto; height: 300px;" class="dialogs" id="dialogs">
+                    </div>
+                </div>
+
+                <form id="form" onsubmit="return false;">
+                    <div class="form-actions">
+                        <div class="input-group">
+                            <input placeholder="Type your message here ..." class="form-control" name="message"
+                                   type="text" id="text_box">
+                                            <span class="input-group-btn">
+                                                <button class="btn btn-sm btn-info no-radius"
+                                                        type="button" id="send_button"
+                                                        disabled="disabled">
+                                                    <i class="icon-share-alt"></i>
+                                                    Send
+                                                </button>
+                                            </span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- /widget-main -->
+        </div>
+        <!-- /widget-body -->
+    </div>
+</div>
+
+<script type="text/javascript">
+
+
+    document.onjxready = function () {
+
+        jxcore.Start(function (status) {
+
+            var dialogs = document.getElementById("dialogs");
+            var send_button = document.getElementById('send_button');
+            var text_box = document.getElementById('text_box');
+
+            send_button.disabled = "";
+
+            var cnt = 1;
+            var avatar = parseInt(Math.random() * 100) % 5;
+
+            //addText is global now
+            window.addText = function (s) {
+                var tmp = document.getElementById("dialog_item_template").innerHTML;
+
+                if(s.imgId === undefined){
+                    s.imgId = avatar;
+                }
+
+                dialogs.innerHTML += tmp.replace("#message#", s.msg)
+                        .replace("#name#", "User").replace("#time#", new Date().toLocaleTimeString())
+                        .replace("#id#", "div" + cnt).replace("avatar1", "avatar" + s.imgId);
+
+                document.getElementById("div" + cnt).scrollIntoView();
+                cnt++;
+            };
+
+            var send_message = function () {
+                if (text_box.value.length) {
+                    jxcore.Call("chatMessage", {msg:text_box.value, imgId:avatar} , function(param) {
+                        // callback from server
+                        addText({msg:"cb: " + param} );
+                    });
+                    text_box.value = "";
+                }
+            };
+
+            text_box.onkeydown = function (ev) {
+                var ev = ev || window.event;
+
+                if (ev.keyCode === 13) {
+                    send_message();
+                }
+            };
+
+            send_button.onclick = send_message;
+
+            addText({msg:"Connected."});
+        });
+
+        jxcore.OnClose = function (reconnecting) {
+            window.addText({msg:"Disconnected."});
+        };
+
+        jxcore.OnError = function (err) {
+            window.addText({msg:err});
+        }
+    };
+</script>
+</body>
+</html>

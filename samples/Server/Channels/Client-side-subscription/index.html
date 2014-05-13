@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>JXcore Messaging API Channels example.</title>
+    <!-- This is useful, if you want to test the backend on mobile devices -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1;maximum-scale=1.0; user-scalable=0;"/>
+
+    <script src="/channels/jx?ms=connect" type="text/javascript"></script>
+</head>
+<body style="font-family: Tahoma, Geneva, sans-serif; font-size: 9;">
+<input type="button" id="btnJoin" value="Join" disabled="disabled"/>
+<input type="button" id="btnSend" value="SendToGroup" disabled="disabled"/>
+<input type="button" id="btnLeave" value="Leave" disabled="disabled"/>
+<BR/>
+<input type="button" id="btnSendFromServer" value="SendToGroup from server" disabled="disabled"/>
+
+<div id="msg"/>
+
+<script type="text/javascript">
+
+    var enableDisableButtons = function (subscribed) {
+        btnJoin.disabled = subscribed ? "disabled" : "";
+        btnLeave.disabled = btnSend.disabled = btnSendFromServer.disabled = subscribed ? "" : "disabled";
+    };
+
+    document.onjxready = function () {
+
+        jxcore.Start(function (status) {
+
+            var btnJoin = document.getElementById('btnJoin');
+            var btnLeave = document.getElementById('btnLeave');
+            var btnSend = document.getElementById('btnSend');
+
+            var btnSendFromServer = document.getElementById('btnSendFromServer');
+
+            // let's enable the buttons, right now the script is loaded
+            enableDisableButtons(false);
+
+            var msg = document.getElementById("msg");
+            msg.innerHTML += "Connected.<BR>";
+
+            // let's define client's custom method
+            var clientsMethod = function (s) {
+                msg.innerHTML += s + "<BR>";
+            };
+            // this we should do to register our custom method for global usage
+            window["clientsMethod"] = clientsMethod;
+
+            btnJoin.onclick = function () {
+                jxcore.Subscribe("programmers", function () {
+                    msg.innerHTML += "Subscribed<BR>";
+                    enableDisableButtons(true);
+                });
+            };
+
+            btnLeave.onclick = function () {
+                jxcore.Unsubscribe("programmers", function () {
+                    msg.innerHTML += "Unsubscribed<BR>";
+                    enableDisableButtons(false);
+                });
+            };
+
+            btnSend.onclick = function () {
+                // let's send local date to other clients.
+                // in fact, we will invoke their local method "clientsMethod"
+                // and pass the date as an argument.
+                jxcore.SendToGroup("programmers", "clientsMethod", new Date().toUTCString());
+            };
+
+            btnSendFromServer.onclick = function () {
+                // let's call the server-side method "sendFromServer" from the client-side!
+                // here we can also see, that argument passed to custom method doesn't have to be
+                // a string - it can be any serializable json object.
+                var params = { groupName: "programmers", methodName: "clientsMethod", message: "Hello" };
+                jxcore.Call("sendFromServer", params, null);
+            };
+
+        });
+
+        jxcore.OnClose = function (reconnecting) {
+            msg.innerHTML += "Disconnected.<BR>";
+        };
+
+        jxcore.OnError = function (err) {
+            msg.innerHTML += err;
+        };
+    }
+</script>
+</body>
+</html>
