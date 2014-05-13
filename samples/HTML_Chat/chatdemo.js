@@ -2,9 +2,9 @@
  * license (MIT) Copyright Nubisa Inc. 2014
  */
 
-var server = require('../../backend/jxm.js');
+var server = require('../../index.js');
 
-server.setApplication("ChatSample", "/chat", "NUBISA-STANDARD-KEY-CHANGE-THIS");
+server.setApplication("ChatSample", "/", "NUBISA-STANDARD-KEY-CHANGE-THIS");
 
 server.addJSMethod("chatMessage", function (env, params) {
     server.sendToAll("addText", params);

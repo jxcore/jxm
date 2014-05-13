@@ -1,0 +1,23 @@
+{
+    "name": "jxm",
+    "description": "Incredibly fast messaging backend",
+    "version": "0.2.5",
+    "author": {
+        "name": "Nubisa Inc."
+    },
+    "bugs": {
+        "url": "http://github.com/Nubisa/jxm/issues"
+    },
+    "main": "index.js",
+    "engines": {
+        "node": "0.10"
+    },
+    "dependencies": {
+        "faye_websocket": "~0.7.2",
+        "amqp": "~0.1.8",
+        "mediaserver": "~0.0.3"
+    },
+    "readme": "README.md",
+    "homepage": "http://jxm.io",
+    "license": "MIT"
+}

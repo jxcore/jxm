@@ -285,7 +285,7 @@ exports.sendCallBack = function (env, params) {
 exports.start = function (options) {
 
     // let this message display always, no matter if server starts or not
-    helpers.log("JXcore Messaging v" + settings.mapiVersion);
+    helpers.log("jxm.io v" + settings.mapiVersion);
 
     if (options) {
         if (options.port) {

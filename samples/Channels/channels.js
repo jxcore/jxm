@@ -2,7 +2,7 @@
  * license (MIT) Copyright Nubisa Inc. 2014
  */
 
-var server = require('../../backend/jxm.js');
+var server = require('../../index.js');
 
 server.setApplication("Channels", "/channels", "NUBISA-STANDARD-KEY-CHANGE-THIS");
 
