@@ -21,5 +21,6 @@ Details for 600.000 messages per second benchmark.
 
 We run the test for ~24 hours / total ~50 Billion messages sent
 
+Multi-server tutorial is available from: http://jxm.io/multi-server-messaging-backend-installation/
 
 
