@@ -18,10 +18,15 @@ public class Main {
 				try {
 					c.Subscribe("programmers", new Callback() {
 						@Override
-						public void call(Object o) throws Exception {
-							System.out.println("Subscribed to " + o.toString());
-							cli.SendToGroup("programmers", "clientsMethod",
-									"Hello from Java client!");
+						public void call(Object o, Integer err) throws Exception {
+							if (err > 0) {
+								System.out.println("Error while subscribing to the group: " + 
+										o.toString() + ". Error code:" + err.toString());
+							} else {
+								System.out.println("Subscribed to " + o.toString());
+								cli.SendToGroup("programmers", "clientsMethod",
+										"Hello from Java client!", null);
+							}
 						}
 					});
 				} catch (Exception e) {

@@ -8,8 +8,12 @@ var client = server.createClient(null, "helloworld", "NUBISA-STANDARD-KEY-CHANGE
 
 client.on('connect', function(client) {
     console.log("Client connected");
-    client.Call("serverMethod", "Hello", function(param) {
-        console.log("Received callback from the server:", param);
+    client.Call("serverMethod", "Hello", function(param, err) {
+        if (err) {
+            console.log("Error while calling server's method. Code: ", err);
+        } else {
+            console.log("Received callback from the server:", param);
+        }
         client.Close();
     });
 });

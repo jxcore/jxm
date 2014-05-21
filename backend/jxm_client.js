@@ -7,7 +7,6 @@ var https = require('https');
 var crypto = require('crypto');
 var querystring = require('querystring');
 var WebSocket = require('faye-websocket')
-var devlog = console.log;
 
 var Client = function (localTarget, appName, appKey, url, port, secure) {
 
@@ -27,7 +26,18 @@ jx_obj.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: fal
 jx_obj.Callbacks = [];
 
 
-jx_obj.Call = function (methodName, json, cb) {
+jx_obj.Call = function (methodName, json, cb, clientCB) {
+
+    if(!methodName || !methodName.length) {
+        var errCode = 7; /* null or empty method name */
+        if (cb) {
+            cb(null, errCode);
+            return;
+        } else {
+            throw "Error no " + errCode;
+        }
+    }
+
     var str = '{"m":"' + methodName + '"';
 
     if (json) {
@@ -35,7 +45,7 @@ jx_obj.Call = function (methodName, json, cb) {
     }
 
     if (cb) {
-        jx_obj.Callbacks.push(cb);
+        jx_obj.Callbacks.push( {cb : cb, methodName: methodName, json : json, clientCB : clientCB } );
         str += ',"i":' + (jx_obj.Callbacks.length).toString();
     }
 
@@ -47,43 +57,74 @@ jx_obj.Call = function (methodName, json, cb) {
 jx_obj.enc = null;
 jx_obj.Subscribe = function (group, cb) {
     if (group && group.length) {
-        jx_obj.Call("nb.ssTo", {gr: group, en: jx_obj.enc}, function (r) {
-            jx_obj.enc = r.key;
-            if (r.did !== null) {
-                jx_obj.dataId = r.did;
+        jx_obj.Call("nb.ssTo", {gr: group, en: jx_obj.enc}, function (r, err, cbData, clientCB) {
+            if (!err) {
+                jx_obj.enc = r.key;
+                if (r.did !== null) {
+                    jx_obj.dataId = r.did;
+                }
             }
-            if (cb) {
-                cb(group);
+            if(clientCB){
+                var gr = cbData && cbData.gr ? cbData.gr : null;
+                clientCB(gr, err);
             }
-        });
+        }, cb);
     }
     else {
-        throw "Group name must be a non empty string";
+        var errCode = 6; /* must be non-empty string*/
+        if (cb) {
+            cb(group, errCode);
+        } else {
+            throw "Error no " + errCode;
+        }
     }
 };
 
 jx_obj.Unsubscribe = function (group, cb) {
     if (!jx_obj.enc) {
+        var errCode = 2;  /* not belonging to any group */
+        if (cb) {
+            cb(group, errCode);
+        } else {
+            throw "Error no " + errCode;
+        }
         return;
     }
     if (group && group.length) {
-        jx_obj.Call("nb.unTo", {gr: group, en: jx_obj.enc}, function (r) {
-            jx_obj.enc = r;
-            if (cb) {
-                cb(group);
+        jx_obj.Call("nb.unTo", {gr: group, en: jx_obj.enc}, function (r, err, cbData, clientCB) {
+            if (!err) {
+                jx_obj.enc = r;
             }
-        });
+            if(clientCB){
+                var gr = cbData && cbData.gr ? cbData.gr : null;
+                clientCB(gr, err);
+            }
+        }, cb);
     }
     else {
-        throw "Group name must be a non empty string";
+        var errCode = 6; /* must be non-empty string*/
+        if (cb) {
+            cb(group, errCode);
+        } else {
+            throw "Error no " + errCode;
+        }
     }
 };
 
-jx_obj.SendToGroup = function (groupName, methodName, json) {
+jx_obj.SendToGroup = function (groupName, methodName, json, cb) {
     if (!groupName) {
         groupName = "ALL";
     }
-    jx_obj.Call("nb.stGr", {key: jx_obj.enc, gr: groupName, m: methodName, j: json});
+
+    if (cb) {
+        jx_obj.Call("nb.stGr", {key:jx_obj.enc, gr:groupName, m:methodName, j:json}, function(r, err, cbData, clientCB){
+            if(clientCB){
+                clientCB(err);
+            }
+        }, cb);
+    } else {
+        jx_obj.Call("nb.stGr", {key:jx_obj.enc, gr:groupName, m:methodName, j:json});
+    }
 };
 
 jx_obj.dataId = null;
@@ -121,13 +162,20 @@ jx_obj.localTarget.$NB = function (a) {
             jx_obj.sscall(p.i, p.p);
         }
         else if (p.i) {
+            var arg1 = p.p.nb_err ? null : p.p;
+            var arg2 = p.p.nb_err ? p.p.nb_err : false;
+
+            var nb_method = jx_obj.Callbacks[p.i-1].methodName.indexOf("nb.") === 0;
+            var arg3 = nb_method ? jx_obj.Callbacks[p.i-1].json : undefined;
+            var arg4 = nb_method ? jx_obj.Callbacks[p.i-1].clientCB : undefined;
+
             jx_obj.ActualCallbackId = p.i;
             if (jx_obj.backup && p.i > jx_obj.Callbacks.length) {
-                jx_obj.backup[p.i - 1](p.p);
+                jx_obj.backup[p.i - 1].cb(arg1, arg2, arg3, arg4);
                 jx_obj.backup[p.i - 1] = null;
             } else {
                 if (jx_obj.Callbacks[p.i - 1]) {
-                    jx_obj.Callbacks[p.i - 1](p.p);
+                    jx_obj.Callbacks[p.i - 1].cb(arg1, arg2, arg3, arg4);
                     jx_obj.Callbacks[p.i - 1] = null;
                 }
             }
@@ -218,7 +266,7 @@ jx_obj.Close = function (silent) {
             jx_obj.SocketAllowClosing = true;
             jx_obj.Socket.close();
         } catch (ex) {
-            devlog("Cannot close socket", ex);
+            errorMessage("Cannot close socket: " + ex);
         }
     }
 };
@@ -706,12 +754,14 @@ jx_obj.sscall = function (id, param) {
 
     // constructor initialization
 
+    var id = 0;
+
     jx_obj.localTarget.methodsOfCall = localTarget;
 
     jx_obj.SocketURL = url; // ip or domain name
     jx_obj.SocketPort = port;
     jx_obj.IsSecure = secure;  // SSL or not
-    jx_obj.applicationKey = "to_do_some_id" + "|" + appName;
+    jx_obj.applicationKey = Date.now()  + (id++) + "|" + appName;
     jx_obj.SecuredKey = encrypt(appKey, jx_obj.applicationKey);
     jx_obj.ListenUrl = "/" + appName + "/jx?de=1&";
 

@@ -49,16 +49,24 @@
             window["clientsMethod"] = clientsMethod;
 
             btnJoin.onclick = function () {
-                jxcore.Subscribe("programmers", function () {
-                    msg.innerHTML += "Subscribed<BR>";
-                    enableDisableButtons(true);
+                jxcore.Subscribe("programmers", function (group, err) {
+                    if (err) {
+                        msg.innerHTML += "Error while subscribing. Code: " + err +  "<BR>";
+                    } else {
+                        msg.innerHTML += "Subscribed<BR>";
+                        enableDisableButtons(true);
+                    }
                 });
             };
 
             btnLeave.onclick = function () {
-                jxcore.Unsubscribe("programmers", function () {
-                    msg.innerHTML += "Unsubscribed<BR>";
-                    enableDisableButtons(false);
+                jxcore.Unsubscribe("programmers", function (group, err) {
+                    if (err) {
+                        msg.innerHTML += "Error while un-subscribing. Code: " + err +  "<BR>";
+                    } else {
+                        msg.innerHTML += "Unsubscribed<BR>";
+                        enableDisableButtons(false);
+                    }
                 });
             };
 
@@ -66,7 +74,11 @@
                 // let's send local date to other clients.
                 // in fact, we will invoke their local method "clientsMethod"
                 // and pass the date as an argument.
-                jxcore.SendToGroup("programmers", "clientsMethod", new Date().toUTCString());
+                jxcore.SendToGroup("programmers", "clientsMethod", new Date().toUTCString(), function(err) {
+                    if (err) {
+                        msg.innerHTML += "Error while SendToGroup(). Code: " + err +  "<BR>";
+                    }
+                });
             };
 
             btnSendFromServer.onclick = function () {

@@ -13,7 +13,6 @@ import java.security.*;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.List;
 
 /**
  * jxm.io Java Client
@@ -254,29 +253,35 @@ public class Client {
      * [/code]
      * </pre>
      */
-    public void Subscribe(final String group, final Callback cb) throws Exception
-    {
-        if(group != null){
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("gr", group);
-            map.put("en", enc);
+	public void Subscribe(final String group, final Callback cb) throws Exception {
+		if (group != null) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("gr", group);
+			map.put("en", enc);
 
-            this.Call("nb.ssTo", map, new Callback() {
-                @Override
-                public void call(Object o) throws Exception {
-                    JSON js = (JSON)o;
-                    onSub(js.getValue("key").toString());
-                    lastMessId = js.getValue("did").toString();
-                    if (cb != null) {
-                        cb.call(group);
-                    }
-                }
-            });
-        }
-        else{
-            throw new Exception( "Group name must be a non empty string" );
-        }
-    }
+			this.Call("nb.ssTo", map, new Callback() {
+				@Override
+				public void call(Object o, Integer err) throws Exception {
+					JSON js = (JSON) o;
+					if (err == 0) {
+						onSub(js.getValue("key").toString());
+						lastMessId = js.getValue("did").toString();
+					}
+
+					if (cb != null) {
+						cb.call(group, err);
+					}
+				}
+			});
+		} else {
+			Integer errCode = 6; /* must be non-empty string */
+			if (cb != null) {
+				cb.call(group, errCode);
+			} else {
+				throw new Exception("Error no " + errCode);
+			}
+		}
+	}
 
     private void onSub(String en){
         enc = en;
@@ -305,31 +310,38 @@ public class Client {
      * [/code]
      * </pre>
      */
-    public void Unsubscribe(final String group, final Callback cb) throws Exception
-    {
-        if (enc == null) {
-            return;
-        }
+	public void Unsubscribe(final String group, final Callback cb) throws Exception {
+		if (enc == null) {
+			return;
+		}
 
-        if(group != null){
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("gr", group);
-            map.put("en", enc);
+		if (group != null) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("gr", group);
+			map.put("en", enc);
 
-            this.Call("nb.unTo", map, new Callback() {
-                @Override
-                public void call(Object o) throws Exception {
-                    onSub(o.toString());
-                    if (cb != null) {
-                        cb.call(group);
-                    }
-                }
-            });
-        }
-        else{
-            throw new Exception( "Group name must be a non empty string" );
-        }
-    }
+			this.Call("nb.unTo", map, new Callback() {
+				@Override
+				public void call(Object o, Integer err) throws Exception {
+					JSON js = (JSON) o;
+					if (err == 0) {
+						onSub(js.getValue("key").toString());
+					}
+
+					if (cb != null) {
+						cb.call(group, err);
+					}
+				}
+			});
+		} else {
+			Integer errCode = 6; /* must be non-empty string */
+			if (cb != null) {
+				cb.call(group, errCode);
+			} else {
+				throw new Exception("Error no " + errCode);
+			}
+		}
+	}
 
     /**
      * Sends message to all clients, that have already subscribed to the specific group.
@@ -347,14 +359,14 @@ public class Client {
      * [/code]
      * </pre>
      */
-    public void SendToGroup(String groupName, String methodName, Object params){
+    public void SendToGroup(String groupName, String methodName, Object params, Callback cb){
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("gr", groupName);
         map.put("m", methodName);
         map.put("j", params);
         map.put("key", enc);
-
-        this.Call("nb.stGr", map, null);
+        
+        this.Call("nb.stGr", map, cb);    
     }
 
     /**
@@ -536,7 +548,7 @@ public class Client {
         }
     }
 
-    private String lastMessId = null;   //TODO use IT!!!!
+    private String lastMessId = null; 
 
     private void Eval(String msg)
     {
@@ -594,8 +606,22 @@ public class Client {
                         if (n < 0) {
                             ssCall(n, param);
                         } else {
-                            if(callbacks.size()>n-1){
-                                callbacks.get(n-1).call(param);
+                        	Integer err = 0;
+                        	
+                        	if (JSON.class.isAssignableFrom(param.getClass())) {
+                        		JSON p = (JSON)param;
+                                
+                            	Object nb_err = p.containsKey("nb_err") ? p.getValue("nb_err") : null;
+
+                            	if (nb_err != null) {
+                                	float fl1 = Float.valueOf(nb_err.toString()).floatValue();
+                                    err = (int)fl1;
+                            	}
+                        	}
+                        	
+                            if(callbacks.size()>n-1) {                      	
+                            	callbacks.get(n-1).call(param, err);
+                            	callbacks.set(n-1, null);
                             }
                         }
                     }catch(Exception e){
