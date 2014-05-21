@@ -4,8 +4,6 @@
 
 var server = require('./../../../../../index.js');
 
-var message = "message from JXcore client";
-
 var methods = {
     clientsMethod: function (client, param) {
         console.log("Received message from sendToGroup():", param);
@@ -30,7 +28,7 @@ client.on('error', function (client, err) {
 client.on('subscription', function (client, subscribed, group) {
     console.log(subscribed ? "Subscribed to" : "Unsubscribed from", "the group", group);
     if (subscribed) {
-        client.SendToGroup(group, "clientsMethod", "Hello from JXcore client");
+        client.SendToGroup(group, "clientsMethod", "Hello from JXcore client!");
     }
 });
 

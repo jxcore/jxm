@@ -40,7 +40,7 @@ public class Main {
 			public void OnSubscription(Client cli, Boolean subscribed, String group) {
 				if (subscribed) {
 					cli.SendToGroup(group, "clientsMethod",
-							"Hello from Java client!");
+							"Hello from Java client!", null);
 				}
 			}
 		};

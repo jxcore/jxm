@@ -27,8 +27,12 @@
             var msg = document.getElementById('msg');
             msg.innerHTML += "Connected.<BR>";
 
-            var callback = function (s) {
-                msg.innerHTML += s + "<BR>";
+            var callback = function (str, err) {
+                if (err) {
+                    msg.innerHTML += "Error while calling serverMethod. Code: " + err + "<BR>";
+                } else {
+                    msg.innerHTML += "Message received: " + str + "<BR>";
+                }
             };
 
             btnSend.onclick = function () {

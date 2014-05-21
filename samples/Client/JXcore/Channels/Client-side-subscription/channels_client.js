@@ -4,8 +4,6 @@
 
 var server = require('./../../../../../index.js');
 
-var message = "message from JXcore client";
-
 var methods = {
     clientsMethod: function (client, param) {
         console.log("Received message from sendToGroup():", param);
@@ -16,9 +14,13 @@ var client = server.createClient(methods, "channels", "NUBISA-STANDARD-KEY-CHANG
 
 client.on('connect', function (client) {
     console.log("Client connected");
-    client.Subscribe("programmers", function (group) {
-        console.log("Subscribed to the group:", group);
-        client.SendToGroup(group, "clientsMethod", message);
+    client.Subscribe("programmers", function (group, err) {
+        if (err) {
+            console.log("Error while subscribing to the group: ", group, ". Error code:", err);
+        } else {
+            console.log("Subscribed to the group:", group);
+            client.SendToGroup(group, "clientsMethod", "Hello from JXcore client!");
+        }
     });
 });
 

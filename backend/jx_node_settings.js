@@ -56,3 +56,18 @@ exports.consoleThreadNumber = true;
 exports.enableClientSideSubscription = false;
 
 //exports.rabbitmqOptions = { host :"localhost" };
+
+exports.clientErrorCodes = {
+
+    clientNotInTheGroup: { id: 1, msg: "Client does not belong to this group." },
+    clientNotInAnyGroup: { id: 2, msg: "Client does not belong to any group." },
+    clientSubscriptionDisabled: { id: 3, msg: "Client-side subscription/unsubscription is disabled on server." },
+    clientAlreadySubscribed: {id: 4, msg: "Client is already subscribed." },
+
+    groupsCouldNotParse: { id: 5, msg: "Could not parse group information." },
+    groupEmptyName: { id : 6, msg : "Group name must be a non empty string" },
+
+    methodEmptyName: { id: 7, msg: "Name of the method was not provided." },
+    methodError: {  id: 8, msg: "Server's custom method error." },
+    methodUnknown: { id: 9, msg: "Method is not defined on the server side" }
+};

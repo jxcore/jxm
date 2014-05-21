@@ -39,8 +39,10 @@ public class Main {
 
 		Callback callback = new Callback() {
 			@Override
-			public void call(Object o) throws Exception {
-				System.out.println("Received from the server " + o.toString());
+			public void call(Object o, Integer err) throws Exception {
+				if (err == 0) {
+					System.out.println("Received from the server " + o.toString());
+				}
 			}
 		};
 

@@ -242,7 +242,6 @@ var sendToClient = function (clid, arrms, _id, moveon) {
     var cnn = handler.listeners[clid];
     if (cnn) {
         if (cnn._id > _id) {
-            console.log(">>", cnn._id, _id);
             return;
         }
 
@@ -276,6 +275,9 @@ exports.sendSystemMessage = function (ms) {
 exports.subscribeClient = function (env, cnn, group, groups) {
     var app = handler.appClients[env.ApplicationName];
     if (!app) {
+        if (!env.ssCall) {
+            exports.sendCallbackWithError(env, "Application is not defined.");
+        }
         return;
     }
 
@@ -299,6 +301,9 @@ exports.subscribeClient = function (env, cnn, group, groups) {
 exports.unsubscribeClient = function (env, cnn, group, groups) {
     var app = handler.appClients[env.ApplicationName];
     if (!app) {
+        if (!env.ssCall) {
+            exports.sendCallbackWithError(env, "Application is not defined.");
+        }
         return;
     }
 
@@ -315,7 +320,7 @@ exports.unsubscribeClient = function (env, cnn, group, groups) {
     if (env.ssCall) {
         exports.sendCallback(env.ClientId, -1, { key: enc, gr: group, su: false });
     } else {
-        exports.sendCallback(env.ClientId, env.Index, enc);
+        exports.sendCallback(env.ClientId, env.Index, { key: enc });
     }
 };
 
@@ -341,4 +346,14 @@ var makeCallBack = function (index, params) {
     };
 
     return JSON.stringify(obj);
+};
+
+
+exports.sendCallbackWithError = function(env, err) {
+
+    if (env.Index) {
+        exports.sendCallback(env.ClientId, env.Index, { "nb_err": err.id });
+    } else {
+        helpers.log(err.msg);
+    }
 };

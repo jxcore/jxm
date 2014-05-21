@@ -12,7 +12,7 @@ public class Callback implements Callable<Object> {
          return null;
     }
 
-    public void call(Object o) throws Exception {
+    public void call(Object o, Integer err) throws Exception {
 
     }
 }

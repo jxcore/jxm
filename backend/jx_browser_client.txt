@@ -63,7 +63,7 @@
         var js = [];
         var isArray = false, isObject = false;
         var type = Object.prototype.toString.call(obj);
-        if (obj === null || type === '[object Null]') {
+        if (obj === null || type === '[object Null]' || type === "[object Undefined]") {
             return "null";
         } else
         if (type === '[object Array]') {
@@ -107,7 +107,19 @@
     };
 
     jxcore.Callbacks = [];
-    jxcore.Call = function(methodName, json, cb){
+
+    jxcore.Call = function(methodName, json, cb, clientCB){
+
+        if(!methodName || !methodName.length) {
+            var errCode = 7; /* null or empty method name */
+            if (cb) {
+                cb(null, errCode);
+                return;
+            } else {
+                throw "Error no " + errCode;
+            }
+        }
+
         var str = '{"m":"'+methodName+'"';
 
         if(json){
@@ -115,7 +127,7 @@
         }
 
         if(cb){
-            jxcore.Callbacks.push(cb);
+            jxcore.Callbacks.push( {cb : cb, methodName: methodName, json : json, clientCB : clientCB } );
             str += ',"i":' + (jxcore.Callbacks.length).toString();
         }
 
@@ -125,46 +137,77 @@
     };
 
     jxcore.enc = null;
-    var subreq = false;  /* subscription request */
     jxcore.Subscribe = function(group, cb){
         if(group && group.length){
-            subreq = "subscription";
-            jxcore.Call("nb.ssTo", {gr:group, en:jxcore.enc}, function(r){
-               jxcore.enc = r.key;
-               if (r.did !== null) {
-                    jxcore.dataId = r.did;
+            jxcore.Call("nb.ssTo", {gr:group, en:jxcore.enc}, function(r, err, cbData, clientCB){
+
+               if (!err) {
+                    jxcore.enc = r.key;
+                    if (r.did !== null) {
+                        jxcore.dataId = r.did;
+                    }
                }
-               subreq = false;
-               if(cb){cb(group);}
-            });
+               if(clientCB){
+                    var gr = cbData && cbData.gr ? cbData.gr : null;
+                    clientCB(gr, err);
+               }
+            }, cb);
         }
-        else{
-            throw "Group name must be a non empty string";
+       else {
+            var errCode = 6; /* must be non-empty string*/
+            if (cb) {
+                cb(group, errCode);
+            } else {
+                throw "Error no " + errCode;
+            }
         }
     };
 
     jxcore.Unsubscribe = function(group, cb){
-        if (!jxcore.enc) {
+        if (!jx_obj.enc) {
+            var errCode = 2;  /* not belonging to any group */
+            if (cb) {
+                cb(group, errCode);
+            } else {
+                throw "Error no " + errCode;
+            }
             return;
         }
         if(group && group.length){
-            subreq = "unsubscription";
-            jxcore.Call("nb.unTo", {gr:group, en:jxcore.enc}, function(r){
-                subreq = false;
-                jxcore.enc = r;
-                if(cb){cb(group);}
-            });
+            jxcore.Call("nb.unTo", {gr:group, en:jxcore.enc}, function(r, err, cbData, clientCB){
+                if (!err) {
+                    jxcore.enc = r.key;
+                }
+                 if(clientCB){
+                      var gr = cbData && cbData.gr ? cbData.gr : null;
+                      clientCB(gr, err);
+                 }
+            }, cb);
         }
-        else{
-            throw "Group name must be a non empty string";
+        else {
+            var errCode = 6; /* must be non-empty string*/
+            if (cb) {
+                cb(group, errCode);
+            } else {
+                throw "Error no " + errCode;
+            }
         }
     };
 
-    jxcore.SendToGroup = function(groupName, methodName, json){
+    jxcore.SendToGroup = function(groupName, methodName, json, cb){
         if(!groupName){
             groupName="ALL";
         }
-        jxcore.Call("nb.stGr", {key:jxcore.enc, gr:groupName, m:methodName, j:json});
+
+        if (cb) {
+            jxcore.Call("nb.stGr", {key:jxcore.enc, gr:groupName, m:methodName, j:json}, function(r, err, cbData, clientCB){
+                if(clientCB){
+                    clientCB(err);
+                }
+            }, cb);
+        } else {
+            jxcore.Call("nb.stGr", {key:jxcore.enc, gr:groupName, m:methodName, j:json});
+        }
     };
 
     jxcore.Custom = {};
@@ -204,14 +247,21 @@
                 jxcore.sscall(p.i, p.p);
             }
             else if(p.i){
+                var arg1 = p.p.nb_err ? null : p.p;
+                var arg2 = p.p.nb_err ? p.p.nb_err : false;
+
+                var nb_method = jxcore.Callbacks[p.i-1].methodName.indexOf("nb.") === 0;
+                var arg3 = nb_method ? jxcore.Callbacks[p.i-1].json : undefined;
+                var arg4 = nb_method ? jxcore.Callbacks[p.i-1].clientCB : undefined;
+
                 jxcore.ActualCallbackId = p.i;
                 if(jxcore.backup && p.i>jxcore.Callbacks.length){
-                    jxcore.backup[p.i-1](p.p);
+                    jxcore.backup[p.i-1].cb(arg1, arg2, arg3, arg4);
                     jxcore.backup[p.i-1] = null;
                 }else{
                     /* on IE6 sometimes happened, that there was no callback ? */
                     if (jxcore.Callbacks[p.i-1]) {
-                        jxcore.Callbacks[p.i-1](p.p);
+                        jxcore.Callbacks[p.i-1].cb(arg1, arg2, arg3, arg4);
                         jxcore.Callbacks[p.i-1] = null;
                     }
                 }
