@@ -1,7 +1,7 @@
 {
     "name": "jxm",
     "description": "Incredibly fast messaging backend",
-    "version": "0.2.7",
+    "version": "0.2.8",
     "author": {
         "name": "Nubisa Inc."
     },
