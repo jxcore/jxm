@@ -28,11 +28,14 @@ exports.store = {
 };
 
 exports.addEvent = function (event, cb) {
-    if (!events[event]) {
-        events[event] = [];
+    if(typeof cb === "function") {
+        if (!events[event]) {
+            events[event] = [];
+        }
+        events[event].push(cb);
+    } else {
+        throw new TypeError("Callback is not a function.");
     }
-
-    events[event].push(cb);
 };
 
 exports.emitEvent = function (event, param1, param2, param3) {
