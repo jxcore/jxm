@@ -392,7 +392,11 @@ exports.setEngine = function (app) {
  * @param listener {function} - Callback function which will be invoked upon emit of the event.
  */
 exports.on = function (event, listener) {
-    helpers.addEvent(event, listener);
+    if(typeof listener === "function") {
+        helpers.addEvent(event, listener);
+    } else {
+        throw new TypeError("Listener is not a function.");
+    }
 };
 
 
