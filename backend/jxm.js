@@ -333,6 +333,8 @@ exports.start = function (options) {
             if (settings.httpsServerPort) {
                 helpers.log("HTTPS -> http" + handler.secureSocketURL.substr(2) + appURL);
             }
+
+            helpers.emitEvent("start");
         });
     }
     else {
