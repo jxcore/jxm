@@ -58,8 +58,15 @@ var createServer = function (apx) {
             return false;
         }
 
-        if (store.exists(req.path)) {
-            var json = store.read(req.path);
+        var _path = null;
+        if(store.exists(req.path))
+            _path = req.path;
+        else if(req.path == "/" && store.exists("/index.html")){
+            _path = "/index.html";
+        }
+
+        if (_path) {
+            var json = store.read(_path);
             var file = JSON.parse(json);
             return mediaserver.pipe(req, res, file.loc, file.type);
         }
