@@ -8,7 +8,7 @@
     "bugs": {
         "url": "http://github.com/Nubisa/jxm/issues"
     },
-    "main": "index.js",
+    "main": "backend/jxm.js",
     "engines": {
         "node": "0.10"
     },

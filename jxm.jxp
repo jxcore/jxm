@@ -6,7 +6,7 @@
     "company": "Nubisa Inc.",
     "website": "http://jxm.io",
 	"package": null,
-	"startup": "index.js",
+	"startup": "backend/jxm.js",
 	"execute": null,
 	"extract": false,
 	"output": "jxm.jx",

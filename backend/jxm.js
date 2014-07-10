@@ -451,3 +451,6 @@ exports.unSubscribeClient = function (env, group) {
 exports.createClient = function (localTarget, appName, appKey, url, port, secure) {
     return new jxm_client.createClient(localTarget, appName, appKey, url, port, secure);
 };
+
+
+exports.mediaserver= require('mediaserver');

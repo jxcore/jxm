@@ -244,8 +244,8 @@ exports.getSession = function (cnn) {
     var pos2 = clid.indexOf('@');
 
     var sid = null;
-    if (pos > 0 && pos2>0) {
-        sid = clid.substr(pos, pos2-pos);
+    if (pos > 0 && pos2>pos) {
+        sid = clid.substr(pos+1, pos2-(pos+1));
     }
     cnn.req.session = {id: sid};
 };
