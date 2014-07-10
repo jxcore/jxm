@@ -240,16 +240,12 @@ exports.logDebug = function () {
 exports.getSession = function (cnn) {
     var clid = cnn.req.clid;
 
-    var n = clid.length;
-    var pos = 0;
-    for (; pos < n; pos++) {
-        if (clid[pos] == 'a') {
-            break;
-        }
-    }
+    var pos = clid.indexOf('a');
+    var pos2 = clid.indexOf('@');
+
     var sid = null;
-    if (pos > 0 && pos < n - 4) {
-        sid = clid.substr(pos + 1, n - (5 + pos));
+    if (pos > 0 && pos2>0) {
+        sid = clid.substr(pos, pos2-pos);
     }
     cnn.req.session = {id: sid};
 };
@@ -288,12 +284,12 @@ exports.newClientId = function (sid, cit) {
     var extra = Math.floor(Math.random() * 1000).toString().slice(0, 3);
 
     if (sid) {
-        return cit + "a" + sid + "" + counter2 + extra;
+        return cit + "a" + sid + "@" + counter2 + extra;
     }
 
     /* 2M unique ids per ip - thread */
 
-    return cit + "a" + exports.newSessionId() + "" + counter2 + extra;
+    return cit + "a" + exports.newSessionId() + "@" + counter2 + extra;
 };
 
 exports.ConnectionType = {HTTP: 1, WebSocket: 2};
