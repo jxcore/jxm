@@ -263,6 +263,7 @@ var _ticker = function (clid, moveon) {
     var end = false;
 
     if (p.data.length > 0) {
+
         if (p.res) {
             if (p.req.desktop) {
                 p.res.write(p.data.join(",") + ",");

@@ -226,7 +226,11 @@ exports.addClientMessage = function (clid, index, message) {
     if (!clientMessages[clid]) {
         clientMessages[clid] = {starts: index};
     }
-    clientMessages[clid].ends = index;
+
+    if(clientMessages[clid].starts <= index)
+        clientMessages[clid].ends = index;
+    else
+        clientMessages[clid].starts = index;
 
     clientMessages[clid][index] = (message);
     clientMessages.__count++;
