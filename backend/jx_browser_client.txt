@@ -76,7 +76,7 @@
         }
         else {
             if (obj.substr) {
-                return '"' + obj.replace(/[\\]/g, '\\\\').replace(/["]/g, '\\"')
+                return '"' + obj.replace(/"/g,"&#400;").replace(/\n/g,"&#399;").replace(/[\\]/g, '\\\\')
                     .replace(/[+]/g,"&#43;") + '"';
             }
             else if (obj.toUTCString) {

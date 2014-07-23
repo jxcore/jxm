@@ -18,7 +18,6 @@ if (global.jxcore) {
     store = helpers.store;
 }
 
-
 var fs = require("fs");
 var serverEvents = {open: null, message: null, close: null, error: null};
 var server = null;
