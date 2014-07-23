@@ -345,7 +345,12 @@ var makeCallBack = function (index, params) {
         i: index, p: params
     };
 
-    return JSON.stringify(obj);
+    var msg = JSON.stringify(obj);
+    msg = msg.replace(regExps[0], "&#64;")
+        .replace(regExps[1], "&#63;")
+        .replace(regExps[2], "&#43;");
+
+    return msg;
 };
 
 

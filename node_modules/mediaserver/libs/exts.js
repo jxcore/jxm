@@ -102,6 +102,7 @@ exports = module.exports = {
     ".naplps": "image/naplps",
     ".nif": "image/x-niff",
     ".niff": "image/x-niff",
+    ".ogg": "audio/ogg",
     ".pbm": "image/x-portable-bitmap",
     ".pct": "image/x-pict",
     ".pcx": "image/x-pcx",

@@ -136,6 +136,8 @@
         jxcore.Send(escape(str));
     };
 
+    jxcore.call = jxcore.Call; /*alias*/
+
     jxcore.enc = null;
     jxcore.Subscribe = function(group, cb){
         if(group && group.length){
@@ -259,7 +261,7 @@
                     jxcore.backup[p.i-1].cb(arg1, arg2, arg3, arg4);
                     jxcore.backup[p.i-1] = null;
                 }else{
-                    /* on IE6 sometimes happened, that there was no callback ? */
+                    /* on IE6 sometimes there was no callback ? */
                     if (jxcore.Callbacks[p.i-1]) {
                         jxcore.Callbacks[p.i-1].cb(arg1, arg2, arg3, arg4);
                         jxcore.Callbacks[p.i-1] = null;
@@ -508,7 +510,7 @@
 
     jxcore.HMess = function(mess) {
         if (mess != null && mess!="") { 
-            mess = mess.replace("jxcore.Listen();", "");
+            mess = mess.replace(/jxcore.Listen();/g, "");
             if (jxcore.OnMessageReceived != null) {
                 jxcore.OnMessageReceived(mess);
                 mess += ";if(jxcore.OnMessageExecuted!=null){jxcore.OnMessageExecuted();};";
@@ -880,7 +882,7 @@
                         }
                         
                         if (mess != null && mess!="") { 
-                            var _mess = mess.replace("jxcore.Listen();", "");
+                            var _mess = mess.replace(/jxcore.Listen();/g, "");
                             hl = _mess.length != mess.length;
                             
                             if (jxcore.OnMessageReceived != null) {
