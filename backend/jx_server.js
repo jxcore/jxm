@@ -124,6 +124,10 @@ var createServer = function (apx) {
 
         getSetCookies(req, res);
 
+        if(helpers.emitEvent('request', req, res) === false){
+            return;
+        }
+
         if (serve(req, res)) {
             return;
         }

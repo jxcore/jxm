@@ -42,13 +42,17 @@ exports.emitEvent = function (event, param1, param2, param3) {
     if (events[event]) {
         for (var id in events[event]) {
             try {
-                events[event][id](param1, param2, param3);
+                var res = events[event][id](param1, param2, param3);
+                if(res === false){
+                    return false;
+                }
             }
             catch (e) {
                 exports.logError("emitting " + event, e);
             }
         }
     }
+    return true;
 };
 
 exports.hasEvent = function (event) {

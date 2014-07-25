@@ -16,4 +16,11 @@ server.addJSMethod("serverMethod", function (env, params) {
 
 server.linkResource("/", ["./index.html", "text/html" ]);
 
+server.on('request', function(req, res){
+    //do something here
+
+    // if you don't want the request continue handling by jxm, return false, otherwise
+    return true;
+});
+
 server.start();
