@@ -5,7 +5,7 @@
 // api docs:    http://jxcore.com/docs/jxcore-messaging.html
 // tutorials:   http://jxcore.com/messaging-api/
 
-var server = require('./../../../../index.js');
+var server = require('../../../../backend/jxm.js');
 
 server.setApplication("Channels", "/channels", "NUBISA-STANDARD-KEY-CHANGE-THIS");
 server.linkResource("/", ["./index.html", "text/html" ]);

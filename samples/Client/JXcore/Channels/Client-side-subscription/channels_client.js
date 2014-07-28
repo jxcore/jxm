@@ -2,7 +2,7 @@
  * Created by Nubisa Inc. on 5/9/14.
  */
 
-var server = require('./../../../../../index.js');
+var server = require('../../../../../backend/jxm.js');
 
 var methods = {
     clientsMethod: function (client, param) {
