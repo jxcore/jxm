@@ -194,10 +194,10 @@ var addMessage = function (rec, target, callTo) {
         //callTo(rec);
         rec._id = -1;
         if (process.subThread) {
-            process.sendToThreads({hit: callTo, data: rec});
+            process.sendToThreads({hit: callTo, data: rec, origin_jxm: 1});
         }
         else {
-            process.sendToMain({hit: callTo, data: rec});
+            process.sendToMain({hit: callTo, data: rec, origin_jxm: 1});
         }
         return true;
     }
@@ -206,10 +206,12 @@ var addMessage = function (rec, target, callTo) {
 var messageTargets = {};
 if (global.jxcore) {
     jxcore.tasks.on("message", function (tid, msg) {
-        if(msg.data && msg.data._id == -1){
-            msg.data._id = jxcore.utils.uniqueId();
+        if(msg && msg.origin_jxm){
+            if(msg.data && msg.data._id == -1){
+                msg.data._id = jxcore.utils.uniqueId();
+            }
+            messageTargets[msg.hit](msg.data);
         }
-        messageTargets[msg.hit](msg.data);
     });
 } else {
     process.sendToMain = function (msg) {

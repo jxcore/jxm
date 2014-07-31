@@ -605,6 +605,7 @@
                     }
                 }, 800);
             };
+
             jxcore.Socket.onmessage = function(ev) {
                 try {
                     var data = unescape(ev.data);
