@@ -519,7 +519,9 @@
             }
 
             try {
-                eval(mess);
+                eval(mess.replace(new RegExp("&#64;","g"),"@")
+                                     .replace(new RegExp("&#63;","g"),"?")
+                                     .replace(new RegExp("&#43;","g"),"+"));
             }catch(ee) {
                 jxcore.Notify(ee, mess);
             }
