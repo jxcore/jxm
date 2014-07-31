@@ -241,7 +241,7 @@ var sendCallback = function (cnn, msgs, moveon) {
 var sendToClient = function (clid, arrms, _id, moveon) {
     var cnn = handler.listeners[clid];
     if (cnn) {
-        if (cnn._id > _id) {
+        if (cnn._id != undefined && cnn._id > _id) {
             return;
         }
 

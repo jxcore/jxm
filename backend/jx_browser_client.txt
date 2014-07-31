@@ -241,9 +241,11 @@
             }
 
             if(p.m){
-                /* not every client MUST have remote method */
                 if (window[p.m]) {
                     window[p.m](p.p);
+                }
+                else{
+                    jxcore.Notify(p.m + " method doesn't exist");
                 }
             }else if (p.i && p.i < 0) {
                 jxcore.sscall(p.i, p.p);
