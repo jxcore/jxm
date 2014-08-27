@@ -37,17 +37,8 @@ exports.handleHttp = function (cnn) {
             cnn.res.write("jxcore.clid='" + cnn.req.clid + "';");
             cnn.res.write("jxcore.ListenUrl='" + cnn.req.path + "';");
 
-            var ssl = cnn.req.client && cnn.req.client.pair && cnn.req.client.pair.ssl;
-
-            if (ssl) {
-                if (exports.secureSocketURL) {
-                    cnn.res.write("jxcore.SocketURL='" + exports.secureSocketURL + "';");
-                }
-            } else {
-                if (exports.socketURL) {
-                    cnn.res.write("jxcore.SocketURL='" + exports.socketURL + "';");
-                }
-            }
+            var wss = exports.secureSocketURL || "wss://" + settings.IPAddress;
+            cnn.res.write("jxcore.SocketURL = (document.location.protocol == 'https:') ? '" + wss + "' : '" + exports.socketURL + "';");
 
         } else {//desktopClient
             cnn.res.write(cnn.req.clid + "|" + settings.base64 + "|" + settings.encoding + "|" + settings.listenerTimeout);
