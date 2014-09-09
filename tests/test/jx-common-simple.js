@@ -199,6 +199,5 @@ exports.getAppName = function() {
     if (argv.indexOf("appName=emptyString") !== -1) ret = ""; else
         ret = "test";
 
-    console.log("appName:", ret);
     return ret;
 };
