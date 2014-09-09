@@ -7,7 +7,7 @@ var jx_commmon = require("./jx-common-simple.js"),
     assert = jx_commmon.assert;
 
 
-var appName = "test";
+var appName = jx_commmon.getAppName();
 var appKey = "NUBISA-STANDARD-KEY-CHANGE-THIS";
 var ipAddress = "localhost";
 var httpServerPort = 8001;
