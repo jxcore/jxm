@@ -120,7 +120,7 @@ var createServer = function (apx) {
 
         var socket = webSocket.isWebSocket(req);
 
-        req.path = req.url.split('?')[0];
+        req.path = exports.getNormalizedPath(req.url.split('?')[0]);
 
         getSetCookies(req, res);
 
@@ -213,7 +213,7 @@ var createServer = function (apx) {
 
             var ws = new webSocket(req, socket, body, null, {ping: 10});
 
-            req.path = req.url.split('?')[0];
+            req.path = exports.getNormalizedPath(req.url.split('?')[0]);
             ws.req = fillReq(req, ws);
             if (!req) {
                 return;
@@ -280,4 +280,15 @@ exports.listenError = function (cb) {
 
 exports.listenMessage = function (cb) {
     serverEvents.message = cb;
+};
+
+
+exports.getNormalizedPath = function(str) {
+    if (str && str.length > 2) {
+        // removing repeated slashes from beginning of path, e.g. //jx
+        while(str.indexOf("//") === 0) {
+            str = str.slice(1);
+        }
+    }
+    return str;
 };

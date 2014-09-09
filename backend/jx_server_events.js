@@ -60,7 +60,7 @@ function fillCNN(cnn) {
                 end = true;
             }
 
-            if ("/" + arr[1] != cnn.req.path && "/" + arr[1] + "/jx" != cnn.req.path) {
+            if ("/" + arr[1] != cnn.req.path && nserver.getNormalizedPath("/" + arr[1] + "/jx") != cnn.req.path) {
                 end = true;
             }
 
