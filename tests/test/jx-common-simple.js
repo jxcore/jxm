@@ -191,3 +191,13 @@ exports.unicodeStrings = [ "норм чё",
     "Εξπετενδα θχεωπηραστυς ατ μελ",
     "text with slashes \ / \\ //"];
 
+
+exports.getAppName = function() {
+    var argv = process.argv.join(" ");
+
+    var ret = "";
+    if (argv.indexOf("appName=emptyString") !== -1) ret = ""; else
+        ret = "test";
+
+    return ret;
+};
