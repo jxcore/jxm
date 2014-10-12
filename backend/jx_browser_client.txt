@@ -782,7 +782,7 @@
 
         txt = txt.join('&');
         var ico = jxcore.ListenCounter++;
-        var uext = 'co=' + ico + "&io=" + jxcore.ieVersion;
+        var uext = 'co=' + ico + "&io=" + (jxcore.isAndroid?1:jxcore.ieVersion);
         if (_url.indexOf('?') > 0) {
             uext = '&' + uext;
         } else {
@@ -868,7 +868,6 @@
 
             if (rs == jxcore.CMode && (oStatus == 200 || oStatus == 304)) {
                 var mess="";
-
                 try {
                     var hl = false; 
                     if (_this.responseText != "") {
@@ -885,9 +884,9 @@
                         else {
                             mess = smes.replace(/[@]/g,"").replace(/[?]/g,"");
                         }
-                        
+
                         if (mess != null && mess!="") { 
-                            var _mess = mess.replace(/jxcore.Listen();/g, "");
+                            var _mess = mess.replace(/jxcore.Listen\(\);/g, "");
                             hl = _mess.length != mess.length;
                             
                             if (jxcore.OnMessageReceived != null) {
