@@ -24,7 +24,8 @@
         jxcore.isIE7 = /MSIE 7/i.test(_ua);
         jxcore.isIE9 = /MSIE 9/i.test(_ua);
         jxcore.isIE10 = /MSIE 10/i.test(_ua);
-        jxcore.ieVersion = (jxcore.isIE8) ? 8 : (jxcore.isIE7) ? 7 : (jxcore.isIE6) ? 6 : (jxcore.isIE9) ? 9 : 10;
+        jxcore.isIE11 = navigator.appName === "Netscape" && /Trident/i.test(_ua) && /rv\:11/i.test(_ua);
+        jxcore.ieVersion = (jxcore.isIE8) ? 8 : (jxcore.isIE7) ? 7 : (jxcore.isIE6) ? 6 : (jxcore.isIE9) ? 9 : (jxcore.isIE10) ? 10 : 11;
     }
     else if(jxcore.isMozilla){
         /* just takes the first number, e.g. from 4.0.1 it takes 4 */
@@ -37,7 +38,7 @@
 
     jxcore.LTimeout = $$listenerTimeout$$;
     jxcore.ReConnCounter = 0;
-    jxcore.Chunked = (jxcore.ffVersion > 0) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
+    jxcore.Chunked = (jxcore.ffVersion > 0 || jxcore.isIE11) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
     jxcore.MessageCount = 0;
     jxcore.CMode = jxcore.Chunked?3:4;
     jxcore.ListenActive = false;
