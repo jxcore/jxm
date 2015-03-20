@@ -1,7 +1,7 @@
 {
     "name": "jxm",
-    "version": "0.3.5",
-    "author": "Nubisa Inc. 2014",
+    "version": "0.3.6",
+    "author": "Nubisa Inc. 2015",
     "description": "Incredibly fast messaging backend",
     "company": "Nubisa Inc.",
     "website": "http://jxm.io",
