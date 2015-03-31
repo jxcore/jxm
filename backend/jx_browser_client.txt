@@ -167,7 +167,7 @@
     };
 
     jxcore.Unsubscribe = function(group, cb){
-        if (!jx_obj.enc) {
+        if (!jxcore.enc) {
             var errCode = 2;  /* not belonging to any group */
             if (cb) {
                 cb(group, errCode);
