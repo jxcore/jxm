@@ -180,7 +180,7 @@ exports.linkAssets = function (urlPath, JXP) {
  * // Or you can delete the existing one:
  * delete server.allowedResourceTypes.woff;
  */
-exports.allowedResourceTypes = mediaserver.types;
+exports.allowedResourceTypes = mediaserver.mediaTypes;
 
 /**
  * Allows linking multiple resources recursively from a given directory.
