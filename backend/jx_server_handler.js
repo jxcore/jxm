@@ -160,7 +160,8 @@ exports.handleSocket = function (cnn) {
 };
 
 var handleSocketSend = function (cnn) {
-    var data = querystring.unescape(cnn.ms);
+    // unescape only for sockets, since http msg is already escaped by querystring.parse()
+    var data = cnn.ws ? querystring.unescape(cnn.ms) : cnn.ms;
     var sid = cnn.req.session;
     if (sid) {
         sid = cnn.req.session.id;

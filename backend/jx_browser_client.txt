@@ -134,7 +134,7 @@
 
         str += "}";
 
-        jxcore.Send(escape(str));
+        jxcore.Send(encodeURIComponent(str));
     };
 
     jxcore.call = jxcore.Call; /*alias*/
@@ -609,11 +609,12 @@
 
             jxcore.Socket.onmessage = function(ev) {
                 try {
-                    var data = unescape(ev.data);
+                    /* server sends unescaped */
+                    var data = ev.data;
                     jxcore.HMess(data);
                 }catch(ee)
                 {
-                   jxcore.Notify(ee, unescape(ev.data));
+                   jxcore.Notify(ee, ev.data);
                 }
             }; 
         }
@@ -873,7 +874,8 @@
                     var hl = false; 
                     if (_this.responseText != "") {
 
-                        var smes = unescape(_this.responseText);
+                        /* server sends unescaped */
+                        var smes = _this.responseText;
 
                         if(jxcore.Chunked){
                             mess = jxcore.ParseBase(smes);
@@ -933,7 +935,8 @@
                 var hl = false;
                 var smes="";
                 if (_this.responseText != "") {
-                    smes = unescape(_this.responseText);
+                    /* server sends unescaped */
+                    smes = _this.responseText;
                     var _mess = smes.replace("jxcore.Listen();", "");
                     hl = _mess.length != smes.length;
                 }

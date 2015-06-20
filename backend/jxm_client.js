@@ -51,7 +51,7 @@ jx_obj.Call = function (methodName, json, cb, clientCB) {
 
     str += "}";
 
-    jx_obj.Send(escape(str));
+    jx_obj.Send(encodeURIComponent(str));
 };
 
 jx_obj.enc = null;
@@ -319,7 +319,8 @@ jx_obj.Start = function () {
 
 jx_obj.ParseMessages = function (responseText, forSocket) {
     if (responseText && responseText.length) {
-        var smes = unescape(responseText);
+        /* server sends unescaped */
+        var smes = responseText;
 
         if (smes.slice(-1) == ",") {
             smes = smes.slice(0, -1);

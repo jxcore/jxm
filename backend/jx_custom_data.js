@@ -32,10 +32,11 @@ var methods = {
 
                         var args = { req: req, group: params.gr, method: params.m, msg: params.j };
 
-                        try {
-                            args.msg = JSON.parse(unescape(JSON.stringify(params.j)));
-                        } catch (ex) {
-                        }
+                        // message is already unescaped
+                        //try {
+                            //args.msg = JSON.parse(unescape(JSON.stringify(params.j)));
+                        //} catch (ex) {
+                        //}
 
                         helpers.emitEvent("sendToGroup", env, args, function (group) {
                             messages.sendToGroup(env.ApplicationName, group || params.gr, messages.createMessage(params.m, params.j));
@@ -201,10 +202,11 @@ exports.onCallReceived = function (env, methodName, param, req) {
         if (app[methodName]) {
 
             var par = param;
-            try {
-                par = JSON.parse(unescape(JSON.stringify(param)));
-            } catch (ex) {
-            }
+            // message is already unescaped
+            //try {
+                //par = JSON.parse(unescape(JSON.stringify(param)));
+            //} catch (ex) {
+            //}
 
             try {
                 app[methodName].call(env, par);
