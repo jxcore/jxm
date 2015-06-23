@@ -11,6 +11,7 @@ import java.net.NoRouteToHostException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.Date;
 
 
@@ -26,11 +27,14 @@ public class PListen extends Thread {
         }
 
         if (in) {
-            mess = unescape(mess);
+            // server sends unescaped
+            // mess = unescape(mess);
             mess = mess.replace("\r", "\\r").replace("\n", "\\n");
         } else {
             mess = mess.replace("\r", "\\r").replace("\n", "\\n");
-            mess = escape(mess);
+            // escape() is not really compatible
+            //mess = escape(mess);
+            mess = encodeUriComponent(mess);
         }
 
         if (client.getEncrypted()) {
@@ -76,6 +80,27 @@ public class PListen extends Thread {
         if ((int) c >= 97 && (int) c <= 102) return 10 + (int) c - 97;
 
         return -1;
+    }
+
+    public static String encodeUriComponent(String string) {
+    	String result = null;
+
+        try
+        {
+          result = URLEncoder.encode(string, "UTF-8");
+          String[] src = { "\\+", "\\%21", 	"\\%27", 	"\\%28", 	"\\%29", 	"\\%7E" };	
+          String[] dst = { "%20", "!", 		"'", 		"(", 		")", 		"~" };
+          int ln = src.length;
+          for (int i = 0; i < ln; i++) {
+        	  result = result.replaceAll(src[i], dst[i]);
+          }
+        } 
+        catch (Exception ex)
+        {
+          result = string;
+        }
+
+        return result;
     }
 
     public static String unescape(String str) {
