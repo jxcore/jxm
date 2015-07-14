@@ -210,14 +210,14 @@ exports.linkResourcesFromPath = function (url, dir) {
     if (dir instanceof Array)
         files = dir;
     else
-        files = fs.readdirSync(dir);
+        files = fs.readdirSync(path.normalize(dir));
 
     for (var a = 0, len = files.length; a < len; a++) {
-        var file = dir + path.sep + files[a];
+        var file = path.join(dir, files[a]);
         var fileInfo = fs.statSync(file);
 
         if (fileInfo.isDirectory()) {
-            exports.linkResourcesFromPath(url + files[a] + path.sep, dir + path.sep + files[a] + path.sep);
+            exports.linkResourcesFromPath(url + files[a] + path.sep, path.join(dir, files[a]));
             continue;
         }
 
