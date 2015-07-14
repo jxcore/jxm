@@ -138,9 +138,15 @@ var createServer = function (apx) {
         }
 
         if (!socket) {
+            var headers_str = "POST, GET, OPTIONS";
+            if (settings.clientExternal) {
+                // needed, otherwise browser displays CORS warnings
+                headers_str += ", cache-control";
+            }
+
             res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
             res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            res.setHeader("Access-Control-Allow-Headers", "POST, GET, OPTIONS");
+            res.setHeader("Access-Control-Allow-Headers", headers_str);
             res.writeHeader(200, {"Content-Type": req.ctype});
 
             if (serverEvents.open) {

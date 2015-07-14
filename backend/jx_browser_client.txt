@@ -5,6 +5,7 @@
     function jxcore(){}
     jxcore.encMode='$$encMode$$';
     jxcore.clientNamespace='$$clientNamespace$$';
+    jxcore.clientExternal=$$clientExternal$$;
     jxcore.Unique='0';
     jxcore.Socket = null;
     jxcore.OnError = null;
@@ -44,6 +45,41 @@
     jxcore.CMode = jxcore.Chunked?3:4;
     jxcore.ListenActive = false;
     jxcore.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: false };
+
+
+    jxcore.currentScript = null;
+    jxcore.findScript = function() {
+
+        if (jxcore.currentScript)
+            return jxcore.currentScript;
+
+        var elm = document.getElementsByTagName("script");
+        var oe = null;
+        for (var o in elm) {
+            oe = elm[o];
+            if (oe == null) {
+                continue;
+            }
+            try {
+                if (oe.src.indexOf("ms=connect") > 0) {
+                    jxcore.currentScript = oe;
+                    return jxcore.currentScript;
+                }
+            } catch(e) {
+            }
+        }
+        return null;
+    };
+
+    jxcore.getScriptOrigin = function() {
+        var oe = jxcore.findScript();
+        if (oe && jxcore.ListenUrl) {
+            var id = oe.src.indexOf(jxcore.ListenUrl);
+            if (id > 0)
+                return oe.src.slice(0, id);
+        }
+        return "";
+    };
 
     jxcore.DateTo = function (dt) {
         var h = dt.getHours();
@@ -747,6 +783,10 @@
         txt.push('c=' + window._pci_());
         
         var _url = jxcore.ListenUrl;
+        if (jxcore.clientExternal) {
+            _url = jxcore.getScriptOrigin() + jxcore.ListenUrl;
+        }
+
         var xmlHttp;
         if (call_id != -1) {
             try {
@@ -1054,21 +1094,8 @@
             var scr = document.createElement("script");
             scr.type = "text/javascript";
             if(!turl) {
-                var elm = document.getElementsByTagName("script");
-                var oe = null;
-                for (var o in elm) {
-                    oe = elm[o];
-                    if (oe == null) {
-                        continue;
-                    }
-                    try {
-                        if (oe.src.indexOf("ms=connect") > 0) {
-                            break;
-                        }
-                    } catch(e) {
-                    }
-                }
-                if (oe == null) {
+                var oe = jxcore.findScript();
+                if (!oe) {
                     document.jxcorercnn = 1;
                     throw "ReConnection error: Make sure that one of the script elements contain jxcore connection parameter 'ms=connect'";
                 }
@@ -1086,8 +1113,8 @@
             setTimeout(function() {     
                     try {
                         document.jxcorercnn = 1;
-                        if (!jxcore.IsConnected) {
-                            jxcore.ReConnect();
+                        if (!window[jxcore.clientNamespace].IsConnected) {
+                            window[jxcore.clientNamespace].ReConnect();
                         }
                     }catch(ee) {
                     }

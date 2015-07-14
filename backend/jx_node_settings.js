@@ -48,6 +48,7 @@ exports.IPAddress = "0.0.0.0";
 exports.chunked = false;
 exports.mapiVersion = "0.3.8";
 exports.clientNamespace = "jxcore";
+exports.clientExternal = false;
 
 //enable disable console logging
 exports.console = true;
