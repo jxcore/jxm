@@ -321,6 +321,7 @@ exports.loadClientScript = function () {
         .replace("$$listenerTimeout$$", settings.listenerTimeout)
         .replace("JXMAPI_VERSION", settings.mapiVersion)
         .replace("$$chunked$$", settings.chunked)
+        .replace("$$clientNamespace$$", settings.clientNamespace);
 
     exports.clientScript = clientScript;
 };

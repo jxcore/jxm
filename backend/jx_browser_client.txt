@@ -4,6 +4,7 @@
 (function(){
     function jxcore(){}
     jxcore.encMode='$$encMode$$';
+    jxcore.clientNamespace='$$clientNamespace$$';
     jxcore.Unique='0';
     jxcore.Socket = null;
     jxcore.OnError = null;
@@ -1085,8 +1086,8 @@
             setTimeout(function() {     
                     try {
                         document.jxcorercnn = 1;
-                        if (!window.jxcore.IsConnected) {
-                            window.jxcore.ReConnect();
+                        if (!jxcore.IsConnected) {
+                            jxcore.ReConnect();
                         }
                     }catch(ee) {
                     }
@@ -1112,7 +1113,7 @@
         }
     }, 250);
 
-    window.jxcore = jxcore;
+    window[jxcore.clientNamespace] = jxcore;
 
     jxcore.sscall = function(id, param) {
         if (id==-1) {

@@ -34,11 +34,13 @@ exports.handleHttp = function (cnn) {
 
         if (!cnn.req.desktop) {//browserClient
             cnn.res.write(helpers.clientScript);
-            cnn.res.write("jxcore.clid='" + cnn.req.clid + "';");
-            cnn.res.write("jxcore.ListenUrl='" + cnn.req.path + "';");
+
+            var ns = "window['" + settings.clientNamespace + "']";
+            cnn.res.write(ns + ".clid='" + cnn.req.clid + "';");
+            cnn.res.write(ns + ".ListenUrl='" + cnn.req.path + "';");
 
             var wss = exports.secureSocketURL || "wss://" + settings.IPAddress;
-            cnn.res.write("jxcore.SocketURL = (document.location.protocol == 'https:') ? '" + wss + "' : '" + exports.socketURL + "';");
+            cnn.res.write(ns + ".SocketURL = (document.location.protocol == 'https:') ? '" + wss + "' : '" + exports.socketURL + "';");
 
         } else {//desktopClient
             cnn.res.write(cnn.req.clid + "|" + settings.base64 + "|" + settings.encoding + "|" + settings.listenerTimeout);
