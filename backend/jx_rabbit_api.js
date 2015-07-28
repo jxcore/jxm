@@ -46,7 +46,7 @@ exports.start = function () {
                         var data = message.data.toString();
                         obj = JSON.parse(data);
                     } catch (e) {
-                        helpers.logError(e, ms);
+                        helpers.logError(ms, e);
                         q.shift();
                         return;
                     }
@@ -75,7 +75,7 @@ exports.start = function () {
                         var data = message.data.toString();
                         obj = JSON.parse(data);
                     } catch (e) {
-                        helpers.logError(e, ms);
+                        helpers.logError(ms, e);
                         cq.shift();
                         return;
                     }
@@ -103,7 +103,7 @@ exports.start = function () {
                         var data = message.data.toString();
                         obj = JSON.parse(data);
                     } catch (e) {
-                        helpers.logError(e, ms);
+                        helpers.logError(ms, e);
                         cq.shift();
                         return;
                     }

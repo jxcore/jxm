@@ -213,7 +213,7 @@ exports.onCallReceived = function (env, methodName, param, req) {
             } catch (ex) {
                 // lets not send details about this error to the client.
                 messages.sendCallbackWithError(env, errorCodes.methodError);
-                helpers.logError(errorCodes.methodError + " " + ex);
+                helpers.logError(errorCodes.methodError, ex);
             }
             return;
         } else {

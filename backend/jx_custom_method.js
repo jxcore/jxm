@@ -21,7 +21,7 @@ exports.handle = function (m, req) {
             obj = ms;
         }
     } catch (e) {
-        helpers.logError(e, "JCM handleCall: " + ms.replace(regx, "+").replace(regxn, "\\n").replace(regxq, "\\\"").replace(/\t/g, "\\t"));
+        helpers.logError("JCM handleCall: " + ms.replace(regx, "+").replace(regxn, "\\n").replace(regxq, "\\\"").replace(/\t/g, "\\t"), e);
 
         return;
     }
@@ -38,7 +38,7 @@ var run = function (item, req) {
         var env = {ClientId: item.clid, ApplicationName: item.appName, SessionID: item.sessionId, Index: item.i };
         customCall.onCallReceived(env, item.m, item.p, req);
     } catch (e) {
-        helpers.logError(e, item.clid + " -- messaging.custom.method run");
+        helpers.logError(item.clid + " -- messaging.custom.method run", e);
         return message.createError(e);
     }
 };
