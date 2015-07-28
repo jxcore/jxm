@@ -18,7 +18,8 @@
     jxcore.isAndroid = /Android/i.test(_ua);
     jxcore.isIOS = /Mobile/i.test(_ua) && /Apple/i.test(_ua);
     jxcore.isOpera = /Opera/i.test(_ua);
-    jxcore.isSafari = /Safari/i.test(_ua);
+    jxcore.isChrome = /Chrome/i.test(_ua);
+    jxcore.isSafari = /Safari/i.test(_ua) && !jxcore.isChrome;
     jxcore.isIE = jxcore.isIE || (!jxcore.isMozilla && !jxcore.isAndroid && !jxcore.isIOS && !jxcore.isOpera && !jxcore.isSafari);
     if(jxcore.isIE){
         jxcore.isIE6 = /MSIE 6/i.test(_ua);
@@ -40,7 +41,7 @@
 
     jxcore.LTimeout = $$listenerTimeout$$;
     jxcore.ReConnCounter = 0;
-    jxcore.Chunked = (jxcore.ffVersion > 0 || jxcore.isIE11) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
+    jxcore.Chunked = (jxcore.ffVersion > 0 || jxcore.isChrome || jxcore.isOpera || jxcore.isSafari || jxcore.isIE11) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
     jxcore.MessageCount = 0;
     jxcore.CMode = jxcore.Chunked?3:4;
     jxcore.ListenActive = false;
@@ -568,7 +569,7 @@
 
     jxcore.SocketOpen = false;
     jxcore.SFirst = [];
-    jxcore.SocketDisabled = false;
+    jxcore.SocketDisabled = $$socketDisabled$$;
     jxcore.SocketURL= null;
 
     jxcore.GoSockets = function(call_id) {

@@ -46,6 +46,8 @@ exports.listenerTimeout = 60000; //long polling request time (ms) NOTE: max 120 
 exports.IPAddress = "0.0.0.0";
 
 exports.chunked = false;
+exports.socketDisabled = false;
+
 exports.mapiVersion = "0.3.9";
 exports.clientNamespace = "jxcore";
 exports.clientExternal = false;
@@ -54,6 +56,7 @@ exports.clientExternal = false;
 exports.console = true;
 exports.consoleInfo = false;
 exports.consoleThreadNumber = true;
+exports.consoleErrorPrintStack = false;
 
 exports.enableClientSideSubscription = false;
 
