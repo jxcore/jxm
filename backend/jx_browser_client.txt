@@ -16,6 +16,7 @@
     jxcore.ieVersion=0;
     jxcore.isIE = /MSIE/i.test(_ua);
     jxcore.isAndroid = /Android/i.test(_ua);
+    jxcore.hasWebsocket = ('WebSocket' in window || 'MozWebSocket' in window);
     jxcore.isIOS = /Mobile/i.test(_ua) && /Apple/i.test(_ua);
     jxcore.isOpera = /Opera/i.test(_ua);
     jxcore.isChrome = /Chrome/i.test(_ua);
@@ -577,7 +578,7 @@
             return false;
         }
 
-        if(jxcore.SocketURL==null || jxcore.isAndroid || (jxcore.isIE && jxcore.ieVersion<9)) {
+        if(jxcore.SocketURL==null || !jxcore.hasWebsocket || (jxcore.isIE && jxcore.ieVersion<9)) {
             jxcore.SocketDisabled = true;
             return false;
         }
