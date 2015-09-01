@@ -17,7 +17,7 @@
     jxcore.isIE = /MSIE/i.test(_ua);
     jxcore.isAndroid = /Android/i.test(_ua);
     jxcore.hasWebsocket = ('WebSocket' in window || 'MozWebSocket' in window);
-    jxcore.isIOS = /Mobile/i.test(_ua) && /Apple/i.test(_ua);
+    jxcore.isIOS = /iPhone|iPad|iPod/i.test(_ua);
     jxcore.isOpera = /Opera/i.test(_ua);
     jxcore.isChrome = /Chrome/i.test(_ua);
     jxcore.isSafari = /Safari/i.test(_ua) && !jxcore.isChrome;
