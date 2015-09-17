@@ -39,6 +39,9 @@ exports.handleHttp = function (cnn) {
             cnn.res.write(ns + ".clid='" + cnn.req.clid + "';");
             cnn.res.write(ns + ".ListenUrl='" + cnn.req.path + "';");
 
+            var listenHost = (settings.httpsServerPort > 0 ? 'https://' : 'http://') + cnn.req.headers.host;
+            cnn.res.write(ns + ".ListenHost='" + listenHost + "';");
+
             var wss = exports.secureSocketURL || "wss://" + settings.IPAddress;
             cnn.res.write(ns + ".SocketURL = (document.location.protocol == 'https:') ? '" + wss + "' : '" + exports.socketURL + "';");
 

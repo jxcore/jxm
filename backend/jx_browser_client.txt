@@ -73,14 +73,9 @@
         return null;
     };
 
+    // depreciated
     jxcore.getScriptOrigin = function() {
-        var oe = jxcore.findScript();
-        if (oe && jxcore.ListenUrl) {
-            var id = oe.src.indexOf(jxcore.ListenUrl);
-            if (id > 0)
-                return oe.src.slice(0, id);
-        }
-        return "";
+        return jxcore.ListenHost;
     };
 
     jxcore.DateTo = function (dt) {
@@ -786,7 +781,7 @@
         
         var _url = jxcore.ListenUrl;
         if (jxcore.clientExternal) {
-            _url = jxcore.getScriptOrigin() + jxcore.ListenUrl;
+            _url = jxcore.ListenHost + jxcore.ListenUrl;
         }
 
         var xmlHttp;
