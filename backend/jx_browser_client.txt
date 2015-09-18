@@ -73,11 +73,6 @@
         return null;
     };
 
-    // depreciated
-    jxcore.getScriptOrigin = function() {
-        return jxcore.ListenHost;
-    };
-
     jxcore.DateTo = function (dt) {
         var h = dt.getHours();
         if (parseInt(h) < 10) { h = "0" + h; }
@@ -781,7 +776,7 @@
         
         var _url = jxcore.ListenUrl;
         if (jxcore.clientExternal) {
-            _url = jxcore.ListenHost + jxcore.ListenUrl;
+            _url = jxcore.ListenProtocol + '//' + jxcore.ListenHost + jxcore.ListenUrl;
         }
 
         var xmlHttp;

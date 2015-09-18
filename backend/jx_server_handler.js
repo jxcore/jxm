@@ -38,12 +38,9 @@ exports.handleHttp = function (cnn) {
             var ns = "window['" + settings.clientNamespace + "']";
             cnn.res.write(ns + ".clid='" + cnn.req.clid + "';");
             cnn.res.write(ns + ".ListenUrl='" + cnn.req.path + "';");
-
-            var listenHost = (settings.httpsServerPort > 0 ? 'https://' : 'http://') + cnn.req.headers.host;
-            cnn.res.write(ns + ".ListenHost='" + listenHost + "';");
-
-            var wss = exports.secureSocketURL || "wss://" + settings.IPAddress;
-            cnn.res.write(ns + ".SocketURL = (document.location.protocol == 'https:') ? '" + wss + "' : '" + exports.socketURL + "';");
+            cnn.res.write(ns + ".ListenProtocol=" + (settings.httpsServerPort > 0 ? "document.location.protocol;" : "'http:';"));
+            cnn.res.write(ns + ".ListenHost='" + cnn.req.headers.host + "';");
+            cnn.res.write(ns + ".SocketURL = (" + ns + ".ListenProtocol === 'https:' ? 'wss://' : 'ws://') + " + ns + ".ListenHost;");
 
         } else {//desktopClient
             cnn.res.write(cnn.req.clid + "|" + settings.base64 + "|" + settings.encoding + "|" + settings.listenerTimeout);
