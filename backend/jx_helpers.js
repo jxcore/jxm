@@ -317,15 +317,12 @@ exports.readStaticContent = function (dir, isBinaryFile) {
     }
 };
 
-var clientScript = null;
 exports.loadClientScript = function () {
-    if (clientScript) {
-        return clientScript;
-    }
+    if (exports.clientScript)
+        return exports.clientScript;
 
-    clientScript = fs.readFileSync(__dirname + '/jx_browser_client.txt') + "";
-
-    clientScript = clientScript.replace("$$encMode$$", settings.base64.toString().toLowerCase())
+    exports.clientScript = fs.readFileSync(__dirname + '/jx_browser_client.txt').toString()
+        .replace("$$encMode$$", settings.base64.toString().toLowerCase())
         .replace("$$encoding$$", settings.encoding)
         .replace("$$listenerTimeout$$", settings.listenerTimeout)
         .replace("JXMAPI_VERSION", settings.mapiVersion)
@@ -333,6 +330,4 @@ exports.loadClientScript = function () {
         .replace("$$clientNamespace$$", settings.clientNamespace)
         .replace("$$clientExternal$$", settings.clientExternal ? "true" : "false")
         .replace("$$socketDisabled$$", settings.socketDisabled ? "true" : "false");
-
-    exports.clientScript = clientScript;
 };
