@@ -73,16 +73,6 @@
         return null;
     };
 
-    jxcore.getScriptOrigin = function() {
-        var oe = jxcore.findScript();
-        if (oe && jxcore.ListenUrl) {
-            var id = oe.src.indexOf(jxcore.ListenUrl);
-            if (id > 0)
-                return oe.src.slice(0, id);
-        }
-        return "";
-    };
-
     jxcore.DateTo = function (dt) {
         var h = dt.getHours();
         if (parseInt(h) < 10) { h = "0" + h; }
@@ -786,7 +776,7 @@
         
         var _url = jxcore.ListenUrl;
         if (jxcore.clientExternal) {
-            _url = jxcore.getScriptOrigin() + jxcore.ListenUrl;
+            _url = jxcore.ListenProtocol + '//' + jxcore.ListenHost + jxcore.ListenUrl;
         }
 
         var xmlHttp;
