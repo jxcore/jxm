@@ -6,9 +6,9 @@
         "name": "Nubisa Inc."
     },
     "bugs": {
-        "url": "http://github.com/Nubisa/jxm/issues"
+        "url": "http://github.com/jxcore/jxm/issues"
     },
-    "repository":"http://github.com/Nubisa/jxm",
+    "repository":"http://github.com/jxcore/jxm",
     "main": "backend/jxm.js",
     "engines": {
         "node": "0.10"
