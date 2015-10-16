@@ -17,6 +17,15 @@
     jxcore.isIE = /MSIE/i.test(_ua);
     jxcore.isAndroid = /Android/i.test(_ua);
     jxcore.hasWebsocket = ('WebSocket' in window || 'MozWebSocket' in window);
+    jxcore.AndroidVersion = _ua.match(/android (; Release\/)?(\d+(?:\.\d+)+);/i);
+    if (jxcore.isAndroid && jxcore.AndroidVersion && jxcore.AndroidVersion.length > 2) {
+        /* the [2] index contains the number e.g.: 4.1.2 */
+        /* websocket are not supported on android < 4.4 */
+        var av = jxcore.AndroidVersion[2].split('.');
+        if (av[0] < 4 || (av[0] == 4 && av[1] < 4))
+            jxcore.hasWebsocket = false;
+        av = null;
+    }
     jxcore.isIOS = /iPhone|iPad|iPod/i.test(_ua);
     jxcore.isOpera = /Opera/i.test(_ua);
     jxcore.isChrome = /Chrome/i.test(_ua);
