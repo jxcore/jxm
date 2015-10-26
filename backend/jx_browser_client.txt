@@ -55,7 +55,7 @@
     jxcore.MessageCount = 0;
     jxcore.CMode = jxcore.Chunked?3:4;
     jxcore.ListenActive = false;
-    jxcore.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: false };
+    jxcore.RequestList = { s: {}, l: {}, sc: 0, sn: 0, ready: true, force_false: false };
 
 
     jxcore.currentScript = null;
@@ -467,6 +467,7 @@
                     var _pool = jxcore.RequestList.sc;
                     if (jxcore.RequestList.s[_pool] != null) {
                         jxcore._Send(_pool);
+                        delete jxcore.RequestList.s[_pool];
                     }
                     jxcore.RequestList.sc++;
                 }
