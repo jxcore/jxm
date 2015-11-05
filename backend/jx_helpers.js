@@ -73,7 +73,7 @@ exports.encKeys = function (txt) {
 
         return str;
     } catch (e) {
-        exports.logError("string could not encrypted", txt);
+        exports.logError("string could not encrypted", txt, e);
     }
 
     return null;
@@ -98,7 +98,7 @@ exports.decKeys = function (txt) {
 
         return ed;
     } catch (e) {
-        exports.logError("string could not be decrypted", txt);
+        exports.logError("string could not be decrypted", txt, e);
     }
     return null;
 };
@@ -198,22 +198,31 @@ exports.log = function (message, message2) {
     }
 };
 
-exports.logError = function (e, message) {
+// txt1, txt2... txtN [, ex]
+exports.logError = function () {
     if (!settings.console) {
         return;
     }
 
-    if (!e) {
-        e = "";
+    var arr = [];
+
+    if (settings.consoleThreadNumber && process.subThread)
+        arr.push(colorize("Thread#" + process.threadId, -1));
+
+    arr.push("Error:");
+    arr = arr.concat(Array.prototype.slice.call(arguments));
+
+    if (settings.consoleErrorPrintStack) {
+        if (arguments[arguments.length -1] instanceof Error) {
+            var e = arguments[arguments.length -1];
+            if (e && e.stack) {
+                arr.push("\n");
+                arr.push(e.stack);
+            }
+        }
     }
-    if (!message) {
-        message = "";
-    }
-    if (settings.consoleThreadNumber && process.subThread) {
-        console.log(colorize("Thread#" + process.threadId, -1), "Error:", e, message);
-    } else {
-        console.log("Error: ", e, message);
-    }
+
+    console.error.apply(this, arr);
 };
 
 exports.logInfo = function (message, details) {
@@ -308,21 +317,17 @@ exports.readStaticContent = function (dir, isBinaryFile) {
     }
 };
 
-var clientScript = null;
 exports.loadClientScript = function () {
-    if (clientScript) {
-        return clientScript;
-    }
+    if (exports.clientScript)
+        return exports.clientScript;
 
-    clientScript = fs.readFileSync(__dirname + '/jx_browser_client.txt') + "";
-
-    clientScript = clientScript.replace("$$encMode$$", settings.base64.toString().toLowerCase())
+    exports.clientScript = fs.readFileSync(__dirname + '/jx_browser_client.txt').toString()
+        .replace("$$encMode$$", settings.base64.toString().toLowerCase())
         .replace("$$encoding$$", settings.encoding)
         .replace("$$listenerTimeout$$", settings.listenerTimeout)
         .replace("JXMAPI_VERSION", settings.mapiVersion)
         .replace("$$chunked$$", settings.chunked)
         .replace("$$clientNamespace$$", settings.clientNamespace)
-        .replace("$$clientExternal$$", settings.clientExternal ? "true" : "false");
-
-    exports.clientScript = clientScript;
+        .replace("$$clientExternal$$", settings.clientExternal ? "true" : "false")
+        .replace("$$socketDisabled$$", settings.socketDisabled ? "true" : "false");
 };

@@ -46,7 +46,8 @@ exports.listenerTimeout = 60000; //long polling request time (ms) NOTE: max 120 
 exports.IPAddress = "0.0.0.0";
 
 exports.chunked = false;
-exports.mapiVersion = "0.3.9";
+exports.socketDisabled = false;
+
 exports.clientNamespace = "jxcore";
 exports.clientExternal = false;
 
@@ -54,6 +55,7 @@ exports.clientExternal = false;
 exports.console = true;
 exports.consoleInfo = false;
 exports.consoleThreadNumber = true;
+exports.consoleErrorPrintStack = false;
 
 exports.enableClientSideSubscription = false;
 
@@ -73,3 +75,15 @@ exports.clientErrorCodes = {
     methodError: {  id: 8, msg: "Server's custom method error." },
     methodUnknown: { id: 9, msg: "Method is not defined on the server side" }
 };
+
+exports.mapiVersion = "";
+
+try {
+    var fs = require("fs");
+    var path = require("path");
+    var package_json = path.join(__dirname, "../package.json");
+    var parsed = JSON.parse(fs.readFileSync(package_json).toString());
+    exports.mapiVersion = parsed.version;
+} catch (ex) {
+    exports.mapiVersion = "Cannot read version from package.json";
+}

@@ -16,9 +16,20 @@
     jxcore.ieVersion=0;
     jxcore.isIE = /MSIE/i.test(_ua);
     jxcore.isAndroid = /Android/i.test(_ua);
-    jxcore.isIOS = /Mobile/i.test(_ua) && /Apple/i.test(_ua);
+    jxcore.hasWebsocket = ('WebSocket' in window || 'MozWebSocket' in window);
+    jxcore.AndroidVersion = _ua.match(/android (; Release\/)?(\d+(?:\.\d+)+);/i);
+    if (jxcore.isAndroid && jxcore.AndroidVersion && jxcore.AndroidVersion.length > 2) {
+        /* the [2] index contains the number e.g.: 4.1.2 */
+        /* websocket are not supported on android < 4.4 */
+        var av = jxcore.AndroidVersion[2].split('.');
+        if (av[0] < 4 || (av[0] == 4 && av[1] < 4))
+            jxcore.hasWebsocket = false;
+        av = null;
+    }
+    jxcore.isIOS = /iPhone|iPad|iPod/i.test(_ua);
     jxcore.isOpera = /Opera/i.test(_ua);
-    jxcore.isSafari = /Safari/i.test(_ua);
+    jxcore.isChrome = /Chrome/i.test(_ua);
+    jxcore.isSafari = /Safari/i.test(_ua) && !jxcore.isChrome;
     jxcore.isIE = jxcore.isIE || (!jxcore.isMozilla && !jxcore.isAndroid && !jxcore.isIOS && !jxcore.isOpera && !jxcore.isSafari);
     if(jxcore.isIE){
         jxcore.isIE6 = /MSIE 6/i.test(_ua);
@@ -40,11 +51,11 @@
 
     jxcore.LTimeout = $$listenerTimeout$$;
     jxcore.ReConnCounter = 0;
-    jxcore.Chunked = (jxcore.ffVersion > 0 || jxcore.isIE11) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
+    jxcore.Chunked = (jxcore.ffVersion > 0 || jxcore.isChrome || jxcore.isOpera || jxcore.isSafari || jxcore.isIE11) || ($$chunked$$ && (jxcore.ieVersion==0 || jxcore.ieVersion>8) ); /* for FF chunked should be true */
     jxcore.MessageCount = 0;
     jxcore.CMode = jxcore.Chunked?3:4;
     jxcore.ListenActive = false;
-    jxcore.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: false };
+    jxcore.RequestList = { s: {}, l: {}, sc: 0, sn: 0, ready: true, force_false: false };
 
 
     jxcore.currentScript = null;
@@ -69,16 +80,6 @@
             }
         }
         return null;
-    };
-
-    jxcore.getScriptOrigin = function() {
-        var oe = jxcore.findScript();
-        if (oe && jxcore.ListenUrl) {
-            var id = oe.src.indexOf(jxcore.ListenUrl);
-            if (id > 0)
-                return oe.src.slice(0, id);
-        }
-        return "";
     };
 
     jxcore.DateTo = function (dt) {
@@ -466,6 +467,7 @@
                     var _pool = jxcore.RequestList.sc;
                     if (jxcore.RequestList.s[_pool] != null) {
                         jxcore._Send(_pool);
+                        delete jxcore.RequestList.s[_pool];
                     }
                     jxcore.RequestList.sc++;
                 }
@@ -568,7 +570,7 @@
 
     jxcore.SocketOpen = false;
     jxcore.SFirst = [];
-    jxcore.SocketDisabled = false;
+    jxcore.SocketDisabled = $$socketDisabled$$;
     jxcore.SocketURL= null;
 
     jxcore.GoSockets = function(call_id) {
@@ -576,7 +578,7 @@
             return false;
         }
 
-        if(jxcore.SocketURL==null || jxcore.isAndroid || (jxcore.isIE && jxcore.ieVersion<9)) {
+        if(jxcore.SocketURL==null || !jxcore.hasWebsocket || (jxcore.isIE && jxcore.ieVersion<9)) {
             jxcore.SocketDisabled = true;
             return false;
         }
@@ -784,7 +786,7 @@
         
         var _url = jxcore.ListenUrl;
         if (jxcore.clientExternal) {
-            _url = jxcore.getScriptOrigin() + jxcore.ListenUrl;
+            _url = jxcore.ListenProtocol + '//' + jxcore.ListenHost + jxcore.ListenUrl;
         }
 
         var xmlHttp;

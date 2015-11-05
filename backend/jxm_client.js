@@ -21,7 +21,7 @@ jx_obj.IsConnected = false;
 jx_obj.LTimeout = 0;
 jx_obj.ReConnCounter = 0;
 jx_obj.ListenActive = false;
-jx_obj.RequestList = { s: [], l: {}, sc: 0, sn: 0, ready: true, force_false: false };
+jx_obj.RequestList = { s: {}, l: {}, sc: 0, sn: 0, ready: true, force_false: false };
 
 jx_obj.Callbacks = [];
 
@@ -235,6 +235,7 @@ jx_obj.SendChecker = function () {
                 var _pool = jx_obj.RequestList.sc;
                 if (jx_obj.RequestList.s[_pool] != null) {
                     jx_obj._Send(_pool);
+                    delete jx_obj.RequestList.s[_pool];
                 }
                 jx_obj.RequestList.sc++;
             }
